@@ -38,22 +38,30 @@ class Permissions(private val context: Context) {
     }
 
     fun scanAppPermissions() {
+        // Get the PackageManager instance to interact with installed apps
         val pm: PackageManager = context.packageManager
+
+        //Retrieves list of installed apps
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
         for (app in apps) {
             try {
+                // Get the package info for the current app
                 val pkgInfo: PackageInfo =
                     pm.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS)
+
+                // Extract the list of requested permissions for the app
                 val permissions = pkgInfo.requestedPermissions
 
                 permissions?.forEach { permission ->
+                    // Check if the permission is considered "dangerous"
                     if (permission == android.Manifest.permission.CAMERA ||
                         permission == android.Manifest.permission.ACCESS_FINE_LOCATION ||
                         permission == android.Manifest.permission.READ_PHONE_STATE ||
                         permission == android.Manifest.permission.READ_CONTACTS ||
                         permission == android.Manifest.permission.READ_SMS
                     ) {
+                        // pop up message
                         showToast("App ${app.packageName} has dangerous permissions.")
                     }
                 }
@@ -91,15 +99,18 @@ class Permissions(private val context: Context) {
         for (app in apps) {
             try {
                 val pkgInfo = pm.getPackageInfo(app.packageName, PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_META_DATA)
+                // Get the signing certificates for the app, handling newer and older versions of Android
                 val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     pkgInfo.signingInfo?.apkContentsSigners
                 } else {
                     @Suppress("DEPRECATION")
+                    // For older Android versions
                     pkgInfo.signatures
                 }
-
+                // Convert the signature array to a string, or default to "No signature" if signatures are null
                 val signatureInfo = signatures?.joinToString { it.toCharsString() } ?: "No signature"
-                val developerName = app.packageName // Alternatively, fetch from metadata if available
+
+                val developerName = app.packageName
 
                 Log.i("AppSignatureInfo", "App: ${app.packageName}, Signature: $signatureInfo, Developer: $developerName")
 
@@ -151,7 +162,6 @@ class Permissions(private val context: Context) {
                 riskScore += 10
             }
         }
-
         // If not a system app, increase risk
         if ((packageInfo.applicationInfo?.flags ?: 0 and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0) {
             riskScore += 5
@@ -162,8 +172,8 @@ class Permissions(private val context: Context) {
             riskScore += 5
         }
 
-        val requestCount = NetworkMonitorService().getRequestCountForApp(packageInfo.packageName)
-        riskScore += addNetworkRiskScore(packageInfo, requestCount)
+       // TODO: implement request count val requestCount = NetworkMonitorService().getRequestCountForApp(packageInfo.packageName)
+      //  riskScore += addNetworkRiskScore(packageInfo, requestCount)
 
         return riskScore
     }
@@ -186,7 +196,8 @@ class Permissions(private val context: Context) {
     }
 
     fun isSignatureTrusted(packageInfo: PackageInfo): Boolean {
-        // Example: Accept all for now; insert trusted signature hashes here if needed
+        // Accept all for now
+        // TODO: get a dataset of trusted signatures then compare apps signatures with the datasets
         return true
     }
 

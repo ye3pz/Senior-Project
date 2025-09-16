@@ -1,77 +1,84 @@
 package com.example.shade
 
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager
-import android.os.Bundle
-import android.widget.Button
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import org.pcap4j.core.PcapHandle
-import org.pcap4j.core.Pcaps
-import org.pcap4j.core.PcapNetworkInterface
-import org.pcap4j.core.PcapNativeException
-import java.util.*
-import android.app.AppOpsManager
-import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.provider.Settings
-import androidx.activity.enableEdgeToEdge
+import android.net.VpnService
+import android.os.Bundle
 import android.util.Log
-import androidx.core.content.ContextCompat.startActivity
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import com.example.shade.databinding.ActivityMainBinding
+import com.example.shade.ui.fragments.HomeFragment
+import com.example.shade.ui.fragments.ScanFragment
+import com.example.shade.ui.fragments.ThreatsFragment
+import com.example.shade.ui.fragments.SettingsFragment
+import com.example.shade.data.FirebaseClient
+import com.example.shade.data.ThreatFeed
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 
-class MainActivity : ComponentActivity() {
 
-    private lateinit var permissions: Permissions
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var vpnPermissionLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        // Enable edge-to-edge layout (if applicable)
-        enableEdgeToEdge()
-
-        // Initialize Permissions instance
-        permissions = Permissions(this)
-
-        // Find the scan button and set the click listener
-        val scanButton: Button = findViewById(R.id.scan)
-        scanButton.setOnClickListener {
-            if (permissions.hasUsageStatsPermission()) {
-                startScan()
+        // Initialize the launcher inside onCreate
+        vpnPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == RESULT_OK) {
+                startService(Intent(this, NetworkMonitorService::class.java))
             } else {
-                permissions.requestUsageStatsPermission()
+                // User denied VPN permission
+            }
+        }
+
+        // Request VPN permission
+        val intent = VpnService.prepare(this)
+        if (intent != null) {
+            vpnPermissionLauncher.launch(intent)
+        } else {
+            startService(Intent(this, NetworkMonitorService::class.java))
+        }
+
+        FirebaseClient.addIp("66.228.39.180", false) //test
+        FirebaseClient.addIp("104_167_250_109", false)
+        CoroutineScope(Dispatchers.IO).launch {
+            val threats = ThreatFeed.fetchThreats()
+            Log.d("ThreatFeedTest", "Fetched ${threats.size} threats (direct test)")
+        }
+
+
+        // Load default fragment (Home)
+        replaceFragment(HomeFragment())
+
+        // Set up bottom navigation
+        binding.bottomNavigation.setOnItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_home -> replaceFragment(HomeFragment())
+                R.id.nav_scan -> replaceFragment(ScanFragment())
+                R.id.nav_threats -> replaceFragment(ThreatsFragment())
+                R.id.nav_settings -> replaceFragment(SettingsFragment())
+                else -> false
             }
         }
     }
 
-    private fun startScan() {
-        // Request permission if not already granted
-        permissions.requestUsageStatsPermission()
-        // Scan for apps with excessive permissions
-        permissions.scanAppPermissions()
 
-        permissions.checkNumberOfPermissions()
-
-        permissions.scanAppSignatures()
-
-        val pm = packageManager
-        val apps = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS)
-
-        for (app in apps) {
-            try {
-                val riskScore = permissions.getSafetyRating(app)
-                val label = permissions.getSafetyLabel(riskScore)
-
-                // Log and optionally show toast (for debug/demo purposes)
-                Log.i("AppSafety", "App: ${app.packageName}, Score: $riskScore, Label: $label")
-                Toast.makeText(this, "App: ${app.packageName} → $label", Toast.LENGTH_SHORT).show()
-
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error evaluating safety for ${app.packageName}", e)
-            }
-        }
+    private fun replaceFragment(fragment: Fragment): Boolean {
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .commit()
+        return true
     }
 }
-
