@@ -12,6 +12,7 @@ class UpdateThreatsWorker (appContext: Context, workerParams: WorkerParameters):
     override suspend fun doWork(): Result {
         return try {
             FirebaseClient.updateFirebaseWithThreats()
+            FirebaseClient.updateFirebaseWithUntrustedSignatures()
             Result.success()
         } catch( e: Exception){
             Log.e(tag, "Failed to update threats", e)

@@ -7,7 +7,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
 
 object FirebaseClient {
-    val tag = "Firebase"
+   const val tag = "Firebase"
     private var initialized = false
     // Lazy initialization of Realtime Database reference
     val db: FirebaseDatabase by lazy {
@@ -160,6 +160,40 @@ object FirebaseClient {
 
         }
     }
+
+    suspend fun updateFirebaseWithUntrustedSignatures() {
+        try{
+            val signatures = ThreatFeed.JA3.fetchFingerprints()
+            if(signatures.isNullOrEmpty()){
+                Log.e(tag, "Get Request returned an EmptyList")
+                return
+            }
+            for (signature in signatures) {
+
+                val sigKey = signature.md5
+
+                val signatureDetails = {
+                    "Firstseen" to signature.Lastseen
+                    "Lastseen" to signature.Firstseen
+                    "Listingreason" to signature.Listingreason
+
+                }
+                db.getReference("signatures/untrusted")
+                    .child(sigKey)
+                    .setValue(signatureDetails)
+                    .addOnSuccessListener {
+                        Log.i(tag, "added signature $sigKey to Firebase")
+                    }
+                    .addOnFailureListener {
+                        Log.e(tag, "Failed to add $sigKey to Firebase")
+                    }
+
+            }
+        } catch(e: Exception){
+            Log.e(tag, "Faield to update Firebase with Signatures, e")
+        }
+    }
+
 
     fun addApp(){
 

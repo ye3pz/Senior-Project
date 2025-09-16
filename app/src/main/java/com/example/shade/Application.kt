@@ -37,6 +37,7 @@ class Shade: Application(){
                 ExistingPeriodicWorkPolicy.KEEP,   // keep the old one if it’s already scheduled
                 threatUpdateRequest
 
+                //For testing
             /*
             val testRequest = OneTimeWorkRequestBuilder<UpdateThreatsWorker>()
                 .setConstraints(

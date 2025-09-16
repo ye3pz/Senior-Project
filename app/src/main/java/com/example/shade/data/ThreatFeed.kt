@@ -109,7 +109,7 @@ object ThreatFeed {
 
         private val api by lazy {retrofit.create(JAFingerprintsAPI::class.java)}
 
-        suspend fun fetchFingerprints(): Unit =  with (Dispatchers.IO) {
+        suspend fun fetchFingerprints(): List<JA3Fingerprint> =  with (Dispatchers.IO) {
             try {
                 val fingerprintCSV = api.getFingerprints().string()
                     .lineSequence()
@@ -125,10 +125,12 @@ object ThreatFeed {
                         )
                     }
                     .toList()
+                fingerprintCSV
             }
              catch( e: Exception){
                 Log.e("tag", "Failed to Fetch JA3 fingerprints", e)
                  e.printStackTrace()
+                 emptyList()
             }
         }
 
