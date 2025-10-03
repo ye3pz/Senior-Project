@@ -14,7 +14,7 @@ import com.example.shade.ui.fragments.ScanFragment
 import com.example.shade.ui.fragments.ThreatsFragment
 import com.example.shade.ui.fragments.SettingsFragment
 import com.example.shade.data.FirebaseClient
-import com.example.shade.data.ThreatFeed
+
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,12 +51,7 @@ class MainActivity : AppCompatActivity() {
             startService(Intent(this, NetworkMonitorService::class.java))
         }
 
-        FirebaseClient.addIp("66.228.39.180", false) //test
-        FirebaseClient.addIp("104_167_250_109", false)
-        CoroutineScope(Dispatchers.IO).launch {
-            val threats = ThreatFeed.fetchThreats()
-            Log.d("ThreatFeedTest", "Fetched ${threats.size} threats (direct test)")
-        }
+
 
 
         // Load default fragment (Home)

@@ -10,7 +10,7 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.core.content.ContextCompat.startActivity
+import com.example.shade.data.FirebaseClient
 
 class Permissions(private val context: Context) {
 
@@ -119,7 +119,7 @@ class Permissions(private val context: Context) {
             }
         }
     }
-    fun getSafetyRating(packageInfo: PackageInfo): Int {
+    suspend fun getSafetyRating(packageInfo: PackageInfo): Int {
         val pm = context.packageManager
         var riskScore = 0
 
@@ -195,10 +195,21 @@ class Permissions(private val context: Context) {
         }
     }
 
-    fun isSignatureTrusted(packageInfo: PackageInfo): Boolean {
-        // Accept all for now
-        // TODO: get a dataset of trusted signatures then compare apps signatures with the datasets
-        return true
+    suspend fun isSignatureTrusted(packageInfo: PackageInfo): Boolean {
+        val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.signingInfo?.apkContentsSigners
+        } else {
+            @Suppress("DEPRECATION")
+            packageInfo.signatures
+        } ?: return true // no signatures → assume trusted
+
+        val signatureBytes = signatures.first().toByteArray()
+        val md5 = java.security.MessageDigest.getInstance("MD5")
+            .digest(signatureBytes)
+            .joinToString("") { "%02x".format(it) }
+
+        val isUntrusted = FirebaseClient.checkSignatureUntrusted(md5)
+        return !isUntrusted
     }
 
     private fun showToast(message: String) {

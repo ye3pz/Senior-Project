@@ -2,9 +2,11 @@ package com.example.shade.data
 
 import android.content.Context
 import android.util.Log
-import com.example.shade.data.ThreatFeed.extractIpFromUrl
+import com.example.shade.data.UrlHausFeed.extractIpFromUrl
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.tasks.await
+
 
 object FirebaseClient {
    const val tag = "Firebase"
@@ -13,7 +15,7 @@ object FirebaseClient {
     val db: FirebaseDatabase by lazy {
         FirebaseDatabase.getInstance().apply {
             //  keep local data in sync with server
-            setPersistenceEnabled(true)
+            //setPersistenceEnabled(true)
         }
     }
 
@@ -38,7 +40,7 @@ object FirebaseClient {
         val schema = mapOf(
             "signatures" to mapOf (
                 "trusted" to mapOf<String, Any?>(),
-                "untrusted " to mapOf<String, Any?>(),
+                "untrusted" to mapOf<String, Any?>(),
          ),
             "ips" to mapOf(
                 "trusted" to mapOf<String, Any?>(),
@@ -122,7 +124,7 @@ object FirebaseClient {
     suspend fun updateFirebaseWithThreats() {
         try {
             // 1. Fetch all threats from URLhaus (this returns List<Threat>)
-            val threats: List<Threat> = ThreatFeed.fetchThreats()
+            val threats: List<Threat> = UrlHausFeed.fetchThreats()
 
             // 2. Loop through each threat, extract an IP, and upload details
             for (threat in threats) {
@@ -163,7 +165,7 @@ object FirebaseClient {
 
     suspend fun updateFirebaseWithUntrustedSignatures() {
         try{
-            val signatures = ThreatFeed.JA3.fetchFingerprints()
+            val signatures = JA3Feed.fetchFingerprints()
             if(signatures.isNullOrEmpty()){
                 Log.e(tag, "Get Request returned an EmptyList")
                 return
@@ -172,12 +174,12 @@ object FirebaseClient {
 
                 val sigKey = signature.md5
 
-                val signatureDetails = {
-                    "Firstseen" to signature.Lastseen
-                    "Lastseen" to signature.Firstseen
+                val signatureDetails = mapOf(
+                    "Firstseen" to signature.Firstseen,
+                    "Lastseen" to signature.Lastseen,
                     "Listingreason" to signature.Listingreason
+                )
 
-                }
                 db.getReference("signatures/untrusted")
                     .child(sigKey)
                     .setValue(signatureDetails)
@@ -194,7 +196,59 @@ object FirebaseClient {
         }
     }
 
+    suspend fun checkSignatureUntrusted(signatureMd5: String): Boolean {
+        return try {
+            val ref = db.getReference("signatures/untrusted").child(signatureMd5)
+            val snapshot = ref.get().await()
+            snapshot.exists()  // true = untrusted, false = not found
+        } catch (e: Exception) {
+            Log.e(tag, "❌ Failed to check signature $signatureMd5", e)
+            false
+        }
+    }
 
+    suspend fun updateFirebaseWithHashes() {
+        try {
+            val samples = MalwareBazaarFeed.fetchApkHashes()
+            if (samples.isEmpty()) {
+                Log.w(tag, "No APK hashes found in MalwareBazaar feed")
+                return
+            }
+
+            val baseRef = db.getReference("apps/untrusted")
+
+            for (sample in samples) {
+                // defensive checks
+                val sha = sample.sha256.trim()
+                Log.i(tag, "sha is here",)
+                if (sha.isEmpty()){
+                    Log.i(tag, "sha is empty")
+                    continue
+                }
+
+
+                val apkDetails = mapOf(
+                    "signature" to sample.signature,
+                    "firstSeen" to sample.firstSeen,
+                    "source" to "MalwareBazaar"
+                )
+
+                try {
+                    Log.i(tag, "Writing APK to Firebase at path: apps/untrusted/$sha, details: $apkDetails")
+                    baseRef.child(sha)
+                        .setValue(apkDetails)
+                        .addOnSuccessListener { Log.i(tag, "✅ Added APK hash $sha to Firebase") }
+                        .addOnFailureListener { e -> Log.e(tag, "Failed to add APK hash $sha", e) }
+
+                } catch (e: Exception) {
+                    Log.e(tag, "❌ Failed to add APK hash $sha", e)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "❌ Failed to update Firebase with APK hashes", e)
+            e.printStackTrace()
+        }
+    }
     fun addApp(){
 
     }

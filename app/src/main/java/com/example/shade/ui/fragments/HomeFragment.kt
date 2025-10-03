@@ -11,6 +11,8 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.shade.Permissions
 import com.example.shade.R
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 class HomeFragment : Fragment() {
 
@@ -32,14 +34,16 @@ class HomeFragment : Fragment() {
         val scanButton = view.findViewById<Button>(R.id.scan)
         scanButton.setOnClickListener {
             if (permissions.hasUsageStatsPermission()) {
-                startScan()
+                lifecycleScope.launch {
+                    startScan()
+                }
             } else {
                 permissions.requestUsageStatsPermission()
             }
         }
     }
 
-    private fun startScan() {
+    private  suspend fun startScan() {
         permissions.requestUsageStatsPermission()
         permissions.scanAppPermissions()
         permissions.checkNumberOfPermissions()

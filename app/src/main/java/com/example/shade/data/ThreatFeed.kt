@@ -33,6 +33,13 @@ data class JA3Fingerprint(
     val Listingreason: String
 )
 
+@Serializable
+data class MalwareSample(
+    val sha256: String,
+    val fileType: String,
+    val signature: String,
+    val firstSeen: String
+)
 
 
 public interface UrlHausApi {
@@ -45,11 +52,16 @@ public interface JAFingerprintsAPI {
     suspend fun getFingerprints(): okhttp3.ResponseBody
 }
 
+public interface  MalwareBazaarApi {
+    @GET("export/csv/recent/")
+    suspend fun getHashes(): ResponseBody
+}
 
 
-object ThreatFeed {
+
+object UrlHausFeed {
     private val baseUrl: String = "https://urlhaus.abuse.ch/"
-    const val tag = "ThreatFeed"
+    const val tag = "URLHausFeed"
 
     // JSON parser with lenient settings
     private val json = Json {
@@ -97,48 +109,6 @@ object ThreatFeed {
         }
     }
 
-    object  JA3 {
-        const val tag = "JA3"
-        const val baseURL = "https://sslbl.abuse.ch/"
-
-        private val retrofit by lazy {
-            Retrofit.Builder()
-                .baseUrl(baseURL)
-                .build()
-        }
-
-        private val api by lazy {retrofit.create(JAFingerprintsAPI::class.java)}
-
-        suspend fun fetchFingerprints(): List<JA3Fingerprint> =  with (Dispatchers.IO) {
-            try {
-                val fingerprintCSV = api.getFingerprints().string()
-                    .lineSequence()
-                    .filter { line -> line.isNotBlank() && !line.trimStart().startsWith("#") }
-                    .map { line ->
-                        val cols = line.split(',')
-                        // defensive check in case of short lines
-                        JA3Fingerprint(
-                            md5 = cols.getOrElse(0) { "" },
-                            Firstseen = cols.getOrElse(1) { "" },
-                            Lastseen = cols.getOrElse(2) { "" },
-                            Listingreason = cols.getOrElse(3) { "" }
-                        )
-                    }
-                    .toList()
-                fingerprintCSV
-            }
-             catch( e: Exception){
-                Log.e("tag", "Failed to Fetch JA3 fingerprints", e)
-                 e.printStackTrace()
-                 emptyList()
-            }
-        }
-
-
-
-    }
-
-
 
         // breaks down url and extracts ip
     fun extractIpFromUrl(url: String): String? {
@@ -147,9 +117,122 @@ object ThreatFeed {
             val ip = uri.host // gives the  IP
             return ip
         } catch (e: Exception) {
-            Log.e(ThreatFeed.tag, "Failed to extract IP from $url", e)
+            Log.e(tag, "Failed to extract IP from $url", e)
             null
         }
     }
 
+}
+
+object  JA3Feed {
+    const val tag = "JA3"
+    const val baseURL = "https://sslbl.abuse.ch/"
+
+    private val retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(baseURL)
+            .build()
+    }
+
+    private val api by lazy {retrofit.create(JAFingerprintsAPI::class.java)}
+
+    suspend fun fetchFingerprints(): List<JA3Fingerprint> =  withContext(Dispatchers.IO) {
+        try {
+            val fingerprintCSV = api.getFingerprints().string()
+                .lineSequence()
+                .filter { line -> line.isNotBlank() && !line.trimStart().startsWith("#") }
+                .map { line ->
+                    val cols = line.split(',')
+                    // defensive check in case of short lines
+                    JA3Fingerprint(
+                        md5 = cols.getOrElse(0) { "" },
+                        Firstseen = cols.getOrElse(1) { "" },
+                        Lastseen = cols.getOrElse(2) { "" },
+                        Listingreason = cols.getOrElse(3) { "" }
+                    )
+                }
+                .toList()
+            Log.i(tag, "Fetched ${fingerprintCSV.size} signatures ")
+            fingerprintCSV
+        }
+        catch( e: Exception){
+            Log.e(tag, "Failed to Fetch JA3 fingerprints", e)
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+}
+
+object MalwareBazaarFeed {
+
+    const val tag = "MalwareBazaar"
+    private const val baseURL = "https://bazaar.abuse.ch/"
+
+    private val retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl(baseURL)
+            .build()
+    }
+
+    private val api by lazy { retrofit.create(MalwareBazaarApi::class.java) }
+
+
+    suspend fun fetchApkHashes(): List<MalwareSample> = withContext(Dispatchers.IO) {
+        try {
+            val rawCsv = api.getHashes().string()
+
+
+            rawCsv
+                .lineSequence()
+                .filter { it.isNotBlank() && !it.trimStart().startsWith("#") }
+                .mapNotNull { line ->
+                    val cols = parseCsvLine(line)
+                    if (cols.size < 8) return@mapNotNull null
+                    val fileType = cols[6].replace("\"", "").lowercase()
+                    if (fileType != "apk" && fileType != "xapk") return@mapNotNull null
+
+                    Log.i(tag, "Adding APK: ${cols.getOrElse(5){ "unknown" }}, fileType=$fileType")
+                    MalwareSample(
+                        sha256 = cols[1],
+                        fileType = fileType,
+                        signature = cols.getOrElse(7) { "" },
+                        firstSeen = cols[0]
+                    )
+                }
+                .toList()
+
+        } catch (e: Exception) {
+            Log.e(tag, "Failed to fetch CSV", e)
+            emptyList()
+        }
+    }
+}
+
+private fun parseCsvLine(line: String): List<String> {
+    val result = mutableListOf<String>()
+    var inQuotes = false
+    val sb = StringBuilder()
+    var i = 0
+
+    while (i < line.length) {
+        val c = line[i]
+        when {
+            c == '"' -> {
+                if (i + 1 < line.length && line[i + 1] == '"') { // escaped quote
+                    sb.append('"')
+                    i++ // skip next quote
+                } else {
+                    inQuotes = !inQuotes
+                }
+            }
+            c == ',' && !inQuotes -> {
+                result.add(sb.toString().trim())
+                sb.clear()
+            }
+            else -> sb.append(c)
+        }
+        i++
+    }
+    result.add(sb.toString().trim())
+    return result
 }
