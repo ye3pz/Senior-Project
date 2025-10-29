@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import  com.example.shade.data.FirebaseClient
 import com.example.shade.data.ThreatItem
@@ -25,6 +26,7 @@ object ThreatsList {
 class Network : VpnService() {
     val tag = "NetworkMonitor"
     private var vpnInterface: ParcelFileDescriptor? = null
+    private var vpnOutput: FileOutputStream? = null
     private var monitorJob: Job? = null
     val appTrafficCounter = ConcurrentHashMap<String, Int>()
 
@@ -38,40 +40,47 @@ class Network : VpnService() {
 
         startForeground(1, notification)
 
-        // Get untrusted IPs from Firebase before building VPN interface
+
         FirebaseClient.getUntrustedIps { ipList ->
+
+            // Populate the list for internal use
+            ThreatsList.threatsList.clear()
+            ipList.forEach { ip -> ThreatsList.threatsList.add(ip) }
+            // Get untrusted IPs from Firebase before building VPN interface
             vpnInterface = Builder()
                 .addAddress("10.0.0.2", 32) // Local dummy VPN IP
                 .setSession("ShadeVPN")
                 .setBlocking(true)
-                .apply {
-                    for (ip in ipList) {
-                        try {
-                            ThreatsList.threatsList.add(ip)
-                            addRoute(ip.title, 32) // black holing  untrusted IP
-                            Log.i(tag, "Blocking untrusted IP: $ip")
-                        } catch (e: Exception) {
-                            Log.e(tag, "Invalid IP format: $ip", e)
-                        }
-                    }
-
-                }
+                .addRoute("0.0.0.0", 0)
                 .establish()
 
-            monitorJob = CoroutineScope(Dispatchers.IO).launch {
-                readPackets()
+            if (vpnInterface != null) {
+                vpnOutput = FileOutputStream(vpnInterface!!.fileDescriptor) // Define output stream
+                monitorJob = CoroutineScope(Dispatchers.IO).launch {
+                    readPackets()
+                }
+            } else {
+                Log.e(tag, "Failed to build VPN interface")
             }
         }
+
 
         return START_STICKY
     }
 
-    private fun readPackets() {
+    private suspend fun readPackets() {
         val input = FileInputStream(vpnInterface?.fileDescriptor)
+        val output = vpnOutput?: return
         val buffer = ByteArray(32767)
 
-        while (true) {
-            val length = input.read(buffer)
+        while (currentCoroutineContext().isActive) {
+            val length = try{
+                input.read(buffer)
+            } catch(e: Exception){
+                Log.e(tag, "Length is less than 0", e)
+                break
+            }
+
             if (length > 0) {
 
                 val srcIp = "${buffer[12].toInt() and 0xFF}.${buffer[13].toInt() and 0xFF}.${buffer[14].toInt() and 0xFF}.${buffer[15].toInt() and 0xFF}"
@@ -87,7 +96,13 @@ class Network : VpnService() {
                         ThreatsList.activeThreats.add(activeThreat)
                         Log.i(tag, "Added ${activeThreat.title} to ThreatList")
                         }
+                    continue
                     }
+                try {
+                    output.write(buffer,0,length)
+                } catch(e: Exception){
+                    Log.e(tag, "Failed to write packet ro VPN tunnel output", e)
+                }
                 }
          }
     }
