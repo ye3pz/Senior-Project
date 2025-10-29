@@ -6,48 +6,37 @@
     android:layout_height="match_parent"
     tools:context=".ui.fragments.ThreatsFragment">
 
-    <!-- Threats List View
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView_threats"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp" />
-        -->
-
-    <!-- Placeholder TextView if no threats are found -->
-
-    <TextView
-        android:id="@+id/ThreatsList"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="List of Possible Threats"
-        android:textColor="?android:textColorPrimary"
-        android:textSize="40sp"
-        android:visibility="visible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.271"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.112" />
-
-    <TextView
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:clipToPadding="false"
+        tools:listitem="@layout/list_item_threat"/> <TextView
         android:id="@+id/txt_no_threats"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="No threats detected"
-        android:textSize="40sp"
+        android:textSize="20sp"
         android:textColor="#FF0000"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
+
+
+
+
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -6,12 +6,16 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <!-- This is the container for your fragments -->
-    <FrameLayout
-        android:id="@+id/fragment_container"
+    <!-- This is the host ragment where rest of fragments are displayed -->
+    <fragment
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="20dp"/>
+        android:layout_height="0dp"
+        app:defaultNavHost="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+        app:navGraph="@navigation/nav_graph" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"

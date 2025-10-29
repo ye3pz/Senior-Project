@@ -8,6 +8,7 @@ import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 
 
+
 object FirebaseClient {
    const val tag = "Firebase"
     private var initialized = false
@@ -83,7 +84,10 @@ object FirebaseClient {
         val category = if (trusted) "trusted" else "untrusted"
 
         val ref = db.getReference("ips").child(category).child(ipKey)
-        ref.setValue(true)
+
+        val emptyThreat = Threat()
+
+        ref.setValue(emptyThreat)
             .addOnSuccessListener {
                 Log.i(tag, "IP $ipAddress added to $category list")
             }
@@ -108,19 +112,41 @@ object FirebaseClient {
                 Log.e("FirebaseClient", "❌ Failed to check IP $ipAddress", e)
             }
     }
-    fun getUntrustedIps(onResult: (List<String>) -> Unit){
+    fun getUntrustedIps(onResult: (List<ThreatItem>) -> Unit){
         // returning Unit, UNit i similar to void
-        val ref = db.getReference("ips/untrusted")
+        val ref = db.getReference("ips/untrusted/")
         ref.get()
             .addOnSuccessListener { snapshot ->
-                val ips = snapshot.children.mapNotNull { it.key?.replace("_", ".") }
-                onResult(ips) // call back function
+                val ipThreats = snapshot.children.mapNotNull { dataSnapshot ->
+
+                    val ipKey = dataSnapshot.key?.replace("_", ".")
+
+
+                    if (ipKey == null) return@mapNotNull null
+
+
+                    val ipValues = dataSnapshot.getValue(Threat::class.java)
+
+                    if (ipValues != null) {
+                        val descriptionText = "${ipValues.threat} (${ipValues.url_status})"
+
+                        ThreatItem(
+                            title = ipKey,
+                            description = descriptionText
+                        )
+                    } else {
+                        null // If the value parsing fails, skip
+                    }
+                }
+                onResult(ipThreats)
             }
             .addOnFailureListener { e ->
                 Log.e(tag, "Failed to fetch untrusted IPs", e)
                 onResult(emptyList())
             }
     }
+
+
     suspend fun updateFirebaseWithThreats() {
         try {
             // 1. Fetch all threats from URLhaus (this returns List<Threat>)

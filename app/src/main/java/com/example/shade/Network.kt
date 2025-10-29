@@ -13,8 +13,17 @@ import kotlinx.coroutines.*
 import java.io.FileInputStream
 import java.util.concurrent.ConcurrentHashMap
 import  com.example.shade.data.FirebaseClient
+import com.example.shade.data.ThreatItem
 
-class NetworkMonitorService : VpnService() {
+
+
+object ThreatsList {
+    val threatsList = mutableListOf<ThreatItem>()
+
+    val activeThreats = mutableListOf<ThreatItem>()
+}
+class Network : VpnService() {
+    val tag = "NetworkMonitor"
     private var vpnInterface: ParcelFileDescriptor? = null
     private var monitorJob: Job? = null
     val appTrafficCounter = ConcurrentHashMap<String, Int>()
@@ -38,12 +47,14 @@ class NetworkMonitorService : VpnService() {
                 .apply {
                     for (ip in ipList) {
                         try {
-                            addRoute(ip, 32) // block each untrusted IP
-                            Log.i("NetworkMonitor", "Blocking untrusted IP: $ip")
+                            ThreatsList.threatsList.add(ip)
+                            addRoute(ip.title, 32) // black holing  untrusted IP
+                            Log.i(tag, "Blocking untrusted IP: $ip")
                         } catch (e: Exception) {
-                            Log.e("NetworkMonitor", "Invalid IP format: $ip", e)
+                            Log.e(tag, "Invalid IP format: $ip", e)
                         }
                     }
+
                 }
                 .establish()
 
@@ -65,10 +76,20 @@ class NetworkMonitorService : VpnService() {
 
                 val srcIp = "${buffer[12].toInt() and 0xFF}.${buffer[13].toInt() and 0xFF}.${buffer[14].toInt() and 0xFF}.${buffer[15].toInt() and 0xFF}"
                 val dstIp = "${buffer[16].toInt() and 0xFF}.${buffer[17].toInt() and 0xFF}.${buffer[18].toInt() and 0xFF}.${buffer[19].toInt() and 0xFF}"
-                Log.d("NetworkMonitor", "Connection: $srcIp → $dstIp")
+                Log.d(tag , "Connection: $srcIp → $dstIp")
                 appTrafficCounter["unknown"] = appTrafficCounter.getOrDefault("unknown", 0) + 1
-            }
-        }
+                val activeThreat = ThreatsList.threatsList.find { threatItem ->
+                    dstIp == threatItem.title
+                }
+                if(activeThreat != null) {
+                        // If active threat isnt on the list a;ready then add it to it
+                    if (!ThreatsList.activeThreats.any { it.title == activeThreat.title }) {
+                        ThreatsList.activeThreats.add(activeThreat)
+                        Log.i(tag, "Added ${activeThreat.title} to ThreatList")
+                        }
+                    }
+                }
+         }
     }
 
     private fun createNotificationChannel() {

@@ -9,10 +9,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.shade.databinding.ActivityMainBinding
-import com.example.shade.ui.fragments.HomeFragment
-import com.example.shade.ui.fragments.ScanFragment
-import com.example.shade.ui.fragments.ThreatsFragment
-import com.example.shade.ui.fragments.SettingsFragment
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import com.example.shade.data.FirebaseClient
 
 
@@ -37,43 +35,31 @@ class MainActivity : AppCompatActivity() {
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             if (result.resultCode == RESULT_OK) {
-                startService(Intent(this, NetworkMonitorService::class.java))
+                startService(Intent(this, Network::class.java))
             } else {
                 // User denied VPN permission
             }
         }
+       
 
         // Request VPN permission
         val intent = VpnService.prepare(this)
         if (intent != null) {
             vpnPermissionLauncher.launch(intent)
         } else {
-            startService(Intent(this, NetworkMonitorService::class.java))
+            startService(Intent(this, Network::class.java))
         }
 
 
+        // ✅ Set up Navigation Component
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val navController = navHostFragment.navController
 
-
-        // Load default fragment (Home)
-        replaceFragment(HomeFragment())
-
-        // Set up bottom navigation
-        binding.bottomNavigation.setOnItemSelectedListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.nav_home -> replaceFragment(HomeFragment())
-                R.id.nav_scan -> replaceFragment(ScanFragment())
-                R.id.nav_threats -> replaceFragment(ThreatsFragment())
-                R.id.nav_settings -> replaceFragment(SettingsFragment())
-                else -> false
-            }
-        }
+        // ✅ Connect BottomNavigationView with NavController
+        binding.bottomNavigation.setupWithNavController(navController)
     }
 
 
-    private fun replaceFragment(fragment: Fragment): Boolean {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .commit()
-        return true
-    }
+
 }

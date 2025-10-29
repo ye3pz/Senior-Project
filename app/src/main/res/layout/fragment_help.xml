@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/help_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Help amd Cybersecurity Awareness"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Here you can learn about malware, phishing, safe browsing, and more..."
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp"
+            android:text="
+• **Home (Dashboard):** Displays your device’s current security status, recent threats, and quick scan options. Includes charts and summaries for a clear overview.
+\n\n• **Scan Tab:** Lets you perform quick or full scans. You can also view your scan history and results.
+\n\n• **Threats Tab:** Lists all detected malware and suspicious files. Each item includes details, threat level, and actions such as Delete, Quarantine, or Ignore.
+\n\n• **Settings Tab:** Manage notifications, safe browsing, and other preferences. You can access settings from any screen using the gear icon in the top-right corner." />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="16dp"
+            android:background="@color/black" />
+
+        <!-- Section 2: Cybersecurity Terms -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cybersecurity Basics"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:paddingBottom="6dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp"
+            android:text="
+• **Malware:** Any malicious software designed to harm your device or steal data.
+\n\n• **Trojan:** A type of malware disguised as a legitimate file or app to trick users into installing it.
+\n\n• **Phishing:** A fraudulent attempt to obtain sensitive information (like passwords) by pretending to be a trusted source.
+\n\n• **Ransomware:** Malware that locks your files or system and demands payment to restore access.
+\n\n• **Adware:** Software that displays unwanted ads and may track user behavior.
+\n\n• **Quarantine:** A secure location where detected threats are isolated so they can’t cause harm.
+\n\n• **Signature:** A unique pattern used to identify known malware.
+\n\n• **Heuristic Analysis:** A method used to detect unknown or modified malware based on suspicious behavior rather than known signatures." />
+
+    </LinearLayout>
+</ScrollView>

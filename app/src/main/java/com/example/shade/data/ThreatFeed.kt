@@ -17,10 +17,10 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 //  properties of JSON Object we are parsing
 @Serializable //
 data class Threat(
-    val url: String,
-    val url_status: String,
-    val threat: String,
-    val urlhaus_link: String
+    val url: String = "",
+    val url_status: String = "",
+    val threat: String = "",
+    val urlhaus_link: String = ""
 )
 
 
@@ -39,6 +39,11 @@ data class MalwareSample(
     val fileType: String,
     val signature: String,
     val firstSeen: String
+)
+
+data class ThreatItem(
+    val title: String,
+    val description: String
 )
 
 
