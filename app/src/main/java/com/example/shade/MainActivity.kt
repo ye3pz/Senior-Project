@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
                 // User denied VPN permission
             }
         }
-       
+
 
         // Request VPN permission
         val intent = VpnService.prepare(this)

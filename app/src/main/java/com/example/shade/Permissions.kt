@@ -11,6 +11,8 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import com.example.shade.data.FirebaseClient
+import com.example.shade.ThreatsList
+import com.example.shade.data.ThreatItem
 
 class Permissions(private val context: Context) {
 
@@ -214,5 +216,21 @@ class Permissions(private val context: Context) {
 
     private fun showToast(message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
+
+    fun PackageInfo.toThreatItem(appName: CharSequence): ThreatItem {
+
+        // Use the package name as the primary identifier (title)
+        val titleText = this.packageName
+
+        // Construct a detailed description
+        val descriptionText = "App Name: $appName (Risk: Dangerous)" +
+                "\nVersion: ${this.versionName ?: "N/A"}" +
+                "\nSource: App Scan"
+
+        return ThreatItem(
+            title = titleText,
+            description = descriptionText
+        )
     }
 }

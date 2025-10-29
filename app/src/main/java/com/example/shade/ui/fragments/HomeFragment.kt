@@ -1,5 +1,6 @@
 package com.example.shade.ui.fragments
 
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -13,6 +14,9 @@ import com.example.shade.Permissions
 import com.example.shade.R
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import com.example.shade.ThreatsList
+import com.example.shade.data.ThreatItem
+
 
 class HomeFragment : Fragment() {
 
@@ -51,18 +55,53 @@ class HomeFragment : Fragment() {
 
         val pm = requireContext().packageManager
         val apps = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS)
+        val activeThreats = ThreatsList.activeThreats
+
+
 
         for (app in apps) {
-            try {
-                val riskScore = permissions.getSafetyRating(app)
-                val label = permissions.getSafetyLabel(riskScore)
 
-                Log.i("AppSafety", "App: ${app.packageName}, Score: $riskScore, Label: $label")
-                Toast.makeText(requireContext(), "App: ${app.packageName} → $label", Toast.LENGTH_SHORT).show()
+            try {
+                    val appInfo = app.applicationInfo?: run {
+                        Log.i(tag, "ApplicationInfo  is null ")
+                        return
+                    }
+                    val appName = pm.getApplicationLabel(appInfo);
+
+                    val riskScore = permissions.getSafetyRating(app)
+                    val label = permissions.getSafetyLabel(riskScore)
+                    Log.i("AppSafety", "App: ${app.packageName}, Score: $riskScore, Label: $label")
+                    Toast.makeText(
+                        requireContext(),
+                        "App: ${app.packageName} → $label",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    if (label == "Dangerous") {
+                        val appThreatItem = app.toThreatItem(appName)
+                        ThreatsList.activeThreats.add(appThreatItem)
+                    }
+
+
 
             } catch (e: Exception) {
                 Log.e("HomeFragment", "Error evaluating safety for ${app.packageName}", e)
             }
         }
     }
+    fun PackageInfo.toThreatItem(appName: CharSequence): ThreatItem {
+
+        // Use the package name as the primary identifier (title)
+        val titleText = this.packageName
+
+        // Construct a detailed description
+        val descriptionText = "App Name: $appName (Risk: Dangerous)" +
+                "\nVersion: ${this.versionName ?: "N/A"}" +
+                "\nSource: App Scan"
+
+        return ThreatItem(
+            title = titleText,
+            description = descriptionText
+        )
+    }
 }
+
