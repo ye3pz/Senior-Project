@@ -62,7 +62,7 @@ class HomeFragment : Fragment() {
         for (app in apps) {
 
             try {
-                    val appInfo = app.applicationInfo?: run {
+                    val appInfo = app.applicationInfo?: run { // makes sure appInfo !=  null
                         Log.i(tag, "ApplicationInfo  is null ")
                         return
                     }
