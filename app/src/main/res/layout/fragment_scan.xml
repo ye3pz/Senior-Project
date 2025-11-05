@@ -7,24 +7,27 @@
     tools:context=".ui.fragments.ScanFragment">
 
     <!-- Scan Button -->
+
+    <!-- Progress Bar -->
+    <!-- Initially hidden -->
     <Button
-        android:id="@+id/btn_scan"
+        android:id="@+id/quick_scan"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Start Scan"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.503"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintVertical_bias="0.18" />
 
-    <!-- Progress Bar -->
-    <!-- Initially hidden -->
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/btn_scan"
+        app:layout_constraintTop_toBottomOf="@id/quick_scan"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="20dp" />
@@ -40,5 +43,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="20dp" />
+
+    <Button
+        android:id="@+id/file_scan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan a File "
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.417" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

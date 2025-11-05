@@ -35,7 +35,7 @@ class HomeFragment : Fragment() {
 
         permissions = Permissions(requireContext())
 
-        val scanButton = view.findViewById<Button>(R.id.scan)
+        val scanButton = view.findViewById<Button>(R.id.quick_scan)
         scanButton.setOnClickListener {
             if (permissions.hasUsageStatsPermission()) {
                 lifecycleScope.launch {
@@ -47,7 +47,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private  suspend fun startScan() {
+      suspend fun startScan() {
         permissions.requestUsageStatsPermission()
         permissions.scanAppPermissions()
         permissions.checkNumberOfPermissions()

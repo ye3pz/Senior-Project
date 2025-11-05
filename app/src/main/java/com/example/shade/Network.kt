@@ -51,7 +51,10 @@ class Network : VpnService() {
                 .addAddress("10.0.0.2", 32) // Local dummy VPN IP
                 .setSession("ShadeVPN")
                 .setBlocking(true)
-                .addRoute("0.0.0.0", 0)
+                .addRoute("0.0.0.0", 24)    // Covers 0.0.0.0 through 127.255.255.255
+                .addRoute("128.0.0.0", 24) // Covers 128.0.0.0 through 255.255.255.255
+                .addDnsServer("192.168.1.1")
+
                 .establish()
 
             if (vpnInterface != null) {
@@ -120,4 +123,5 @@ class Network : VpnService() {
         vpnInterface?.close()
         super.onDestroy()
     }
+
 }
