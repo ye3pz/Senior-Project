@@ -103,13 +103,16 @@ import com.example.shade.ui.theme.UploadPage
 import com.example.shade.ui.theme.ShadeTheme
 import com.example.shade.ui.theme.UserGuidePage
 import com.example.shade.ui.theme.HomePage
+import com.example.shade.ui.theme.AboutUs
 
 
 
 enum class ActiveScreen {
     MAIN,           // normal bottom-nav layout
     USER_GUIDE,     // User Guide page
-    APP_DETAILS_1   // App Details page
+    APP_DETAILS_1,   // App Details page
+
+    ABOUT_US         //About Us Page
 }
 
 class MainActivity : ComponentActivity() {
@@ -136,6 +139,7 @@ class MainActivity : ComponentActivity() {
                                 onClose = { isMenuOpen = false },
                                 onSettingsClick = {
                                     // TODO: open Settings later
+
                                 },
                                 onUserGuideClick = {
                                     isMenuOpen = false
@@ -143,6 +147,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onAboutUsClick = {
                                     // TODO: About Us later
+                                    isMenuOpen = false
+                                    activeScreen = ActiveScreen.ABOUT_US
                                 }
                             )
                         }
@@ -153,6 +159,16 @@ class MainActivity : ComponentActivity() {
                                 onBackClick = {
                                     activeScreen = ActiveScreen.MAIN
                                      isMenuOpen = true
+                                }
+                            )
+                        }
+
+                        //About Us full-screen
+                        activeScreen == ActiveScreen.ABOUT_US -> {
+                            AboutUs(
+                                onBackClick = {
+                                    activeScreen = ActiveScreen.MAIN
+                                    isMenuOpen = true
                                 }
                             )
                         }
