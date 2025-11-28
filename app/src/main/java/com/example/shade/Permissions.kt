@@ -15,6 +15,7 @@ import com.example.shade.ThreatsList
 import com.example.shade.data.ThreatItem
 
 class Permissions(private val context: Context) {
+    val tag = "permissions"
 
     fun hasUsageStatsPermission(): Boolean {
         val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
@@ -35,7 +36,8 @@ class Permissions(private val context: Context) {
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             context.startActivity(intent)
         } else {
-            Toast.makeText(context, "Package Usage Stats permission granted.", Toast.LENGTH_SHORT).show()
+            //Toast.makeText(context, "Package Usage Stats permission granted.", Toast.LENGTH_SHORT).show()
+            Log.i(tag, "Package Usage Stats permission granted." )
         }
     }
 
@@ -64,7 +66,8 @@ class Permissions(private val context: Context) {
                         permission == android.Manifest.permission.READ_SMS
                     ) {
                         // pop up message
-                        showToast("App ${app.packageName} has dangerous permissions.")
+                       // showToast("App ${app.packageName} has dangerous permissions.")
+                        Log.i(tag, "App ${app.packageName} has dangerous permissions.")
                     }
                 }
             } catch (e: PackageManager.NameNotFoundException) {
@@ -84,7 +87,8 @@ class Permissions(private val context: Context) {
                 val permissions = pkgInfo.requestedPermissions
 
                 if (permissions != null && permissions.size > 10) {
-                    showToast("App ${app.packageName} requests a large number of permissions.")
+                    //showToast("App ${app.packageName} requests a large number of permissions.")
+                    Log.i(tag, "App ${app.packageName} requests a large number of permissions.",)
                 }
             } catch (e: PackageManager.NameNotFoundException) {
                 Log.e("Permissions", "Error checking app permissions", e)

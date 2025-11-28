@@ -12,20 +12,32 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.shade.ui.viewmodel.HistoryViewModel
+import com.example.shade.ui.viewmodel.QuickScanViewModel
 
 @Composable
 fun ScanPage(
+    historyViewModel: HistoryViewModel,
+    quickScanViewModel: QuickScanViewModel,
     onMenuClick: () -> Unit
 ) {
     val background = Color(0xFF311A57)      // dark purple
     val cardColor = Color(0xFF5A3B8D)       // lighter purple for cards
 
+    LaunchedEffect(quickScanViewModel.scanCompleted.collectAsState().value) {
+        if (quickScanViewModel.scanCompleted.value) {
+            historyViewModel.refreshHistory()
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -93,7 +105,8 @@ fun ScanPage(
                     tint = Color(0xFFFFEB3B),        // yellow-ish
                     modifier = Modifier.size(22.dp)
                 )
-            }
+            },
+            onClick = { quickScanViewModel.startQuickScan()}
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -111,7 +124,9 @@ fun ScanPage(
                     tint = Color(0xFF00E5FF),        // cyan-ish
                     modifier = Modifier.size(22.dp)
                 )
-            }
+            },
+            onClick = {}
+
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -124,7 +139,8 @@ private fun ScanCard(
     description: String,
     buttonText: String,
     cardColor: Color,
-    icon: @Composable () -> Unit
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -168,7 +184,7 @@ private fun ScanCard(
                 .align(Alignment.CenterHorizontally)
                 .background(Color.White, RoundedCornerShape(20.dp))
                 .clickable {
-                    // TODO: handle scan action
+                    onClick()
                 }
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {

@@ -110,6 +110,9 @@ import com.example.shade.ui.theme.ShadeTheme
 import com.example.shade.ui.theme.UserGuidePage
 import com.example.shade.ui.theme.HomePage
 import com.example.shade.ui.theme.AboutUs
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.shade.ui.viewmodel.QuickScanViewModel
+import com.example.shade.ui.viewmodel.HistoryViewModel
 
 
 
@@ -133,6 +136,14 @@ class MainActivity : ComponentActivity() {
 
                 // currently selected app in History (for details screen)
                 var selectedApp by remember { mutableStateOf<HistoryItem?>(null) }
+
+                val quickScanViewModel: QuickScanViewModel = viewModel()
+                val historyViewModel: HistoryViewModel = viewModel()
+
+
+                quickScanViewModel.onScanCompleted = {
+                    historyViewModel.refreshHistory()
+                }
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -195,15 +206,19 @@ class MainActivity : ComponentActivity() {
                                 Box(modifier = Modifier.weight(1f)) {
                                     when (selectedTab) {
                                         0 -> HomePage(
+                                            viewModel = quickScanViewModel,
                                             onMenuClick = {isMenuOpen = true }
                                         )
                                         1 -> ScanPage(
+                                            historyViewModel = historyViewModel,
+                                            quickScanViewModel= quickScanViewModel,
                                             onMenuClick = { isMenuOpen = true }
                                         )
                                         2 -> UploadPage(
                                              onMenuClick = {isMenuOpen = true }
                                         )
                                         3 -> HistoryPage(
+                                            viewModel = historyViewModel,
                                             onMenuClick = { isMenuOpen = true },
                                             onItemClick = { app ->
                                                 selectedApp = app

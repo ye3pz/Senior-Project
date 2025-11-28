@@ -80,7 +80,7 @@ class ScanFragment : Fragment() {
         scanFileButton.setOnClickListener(buttonClickListener)
     }
 
-    private fun handleQuickScan() {
+    fun handleQuickScan() {
         if (permissions.hasUsageStatsPermission()) {
             // Launch the suspending call within the fragment's lifecycle scope
             lifecycleScope.launch {

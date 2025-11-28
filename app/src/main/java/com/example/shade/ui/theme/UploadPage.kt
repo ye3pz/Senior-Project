@@ -17,11 +17,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+
+import com.example.shade.utils.UploadHelper
 
 @Composable
 fun UploadPage(
     onMenuClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    val uploadHelper = remember { UploadHelper(context) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            coroutineScope.launch {
+                uploadHelper.processFileUri(it)
+            }
+        }
+    }
+
     val background = Color(0xFF311A57)      // dark purple
     val cardColor = Color(0xFF5A3B8D)       // lighter purple for cards
     val textColor = Color.White
@@ -114,7 +136,7 @@ fun UploadPage(
                 modifier = Modifier
                     .background(Color.White, RoundedCornerShape(20.dp))
                     .clickable {
-                        // TODO: open file picker
+                        filePickerLauncher.launch("application/vnd.android.package-archive")
                     }
                     .padding(horizontal = 24.dp, vertical = 8.dp)
             ) {

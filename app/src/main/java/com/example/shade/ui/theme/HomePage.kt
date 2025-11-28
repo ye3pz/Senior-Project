@@ -18,11 +18,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.shade.ui.viewmodel.QuickScanViewModel
 
 @Composable
 fun HomePage(
+    viewModel: QuickScanViewModel,
     onMenuClick: () -> Unit,
-    onQuickScanClick: () -> Unit = {},
+    onQuickScanClick: () -> Unit = {
+
+    },
     onTapScanClick: () -> Unit = {}
 ) {
     val background = Color(0xFF311A57)      // dark purple
@@ -76,7 +80,7 @@ fun HomePage(
                 .padding(horizontal = 16.dp)
                 .fillMaxWidth()
                 .background(cardColor, RoundedCornerShape(18.dp))
-                .clickable { onQuickScanClick() }
+                .clickable { onQuickScanClick }
                 .padding(vertical = 18.dp, horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -107,7 +111,7 @@ fun HomePage(
                 modifier = Modifier
                     .size(180.dp)
                     .background(Color.White, CircleShape)
-                    .clickable { onTapScanClick() },
+                    .clickable { viewModel.startQuickScan() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

@@ -21,6 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.shade.ui.viewmodel.HistoryViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 // Threat levels used by History and App Details
 enum class ThreatLevel { SAFE, MEDIUM, HIGH }
@@ -34,6 +37,7 @@ data class HistoryItem(
 
 @Composable
 fun HistoryPage(
+    viewModel: HistoryViewModel,
     onMenuClick: () -> Unit,
     onItemClick: (HistoryItem) -> Unit
 ) {
@@ -42,15 +46,7 @@ fun HistoryPage(
     val textColor = Color.White
 
     // Sample data – you can replace with real scan results later
-    val items = listOf(
-        HistoryItem("Candy Crush",       "10-29-2025 11:23 AM", ThreatLevel.SAFE),
-        HistoryItem("Just A Flashlight", "10-29-2025 11:20 AM", ThreatLevel.HIGH),
-        HistoryItem("Quick Notes",       "10-29-2025 11:15 AM", ThreatLevel.MEDIUM),
-        HistoryItem("Google Notes",      "10-29-2025 11:12 PM", ThreatLevel.SAFE),
-        HistoryItem("Block Blast!",      "10-26-2025 07:03 PM", ThreatLevel.SAFE),
-        HistoryItem("Xtreme Alarm App",  "10-25-2025 01:55 AM", ThreatLevel.HIGH),
-        HistoryItem("BeReal",            "10-24-2025 07:44 PM", ThreatLevel.SAFE)
-    )
+    val items by viewModel.items.collectAsState()
 
     Column(
         modifier = Modifier
