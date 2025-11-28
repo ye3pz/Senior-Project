@@ -113,6 +113,14 @@ import com.example.shade.ui.theme.AboutUs
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.shade.ui.viewmodel.QuickScanViewModel
 import com.example.shade.ui.viewmodel.HistoryViewModel
+import android.net.VpnService
+import android.util.Log
+import com.example.shade.data.FirebaseClient
+import androidx.activity.result.ActivityResultLauncher
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.shade.databinding.ActivityMainBinding
+
 
 
 
@@ -125,9 +133,30 @@ enum class ActiveScreen {
 }
 
 class MainActivity : ComponentActivity() {
+    private val tag = "mainActivity"
+    private lateinit var vpnPermissionLauncher: ActivityResultLauncher<Intent>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Initialize the launcher inside onCreate
+        vpnPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == RESULT_OK) {
+                startService(Intent(this, Network::class.java))
+            } else {
+                // User denied VPN permission
+            }
+        }
+
+        // Request VPN permission
+        val intent = VpnService.prepare(this)
+        if (intent != null) {
+            vpnPermissionLauncher.launch(intent)
+        } else {
+            startService(Intent(this, Network::class.java))
+        }
         setContent {
             ShadeTheme {
                 var isMenuOpen by remember { mutableStateOf(false) }

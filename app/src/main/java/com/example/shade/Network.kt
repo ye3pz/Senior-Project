@@ -21,6 +21,7 @@ import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.Executors
 import java.net.Socket
 import kotlinx.coroutines.sync.withLock
+import com.google.firebase.FirebaseApp
 
 
 import java.net.InetAddress
@@ -53,8 +54,8 @@ class Network : VpnService() {
     }.asCoroutineDispatcher()
 
 
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val currentPackageName = packageName
         FirebaseClient.cleanInvalidIpsFromFirebase()
         createNotificationChannel()
         val notification = NotificationCompat.Builder(this, "shade_channel")

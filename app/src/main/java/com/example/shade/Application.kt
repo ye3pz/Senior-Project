@@ -10,13 +10,14 @@ import java.util.concurrent.TimeUnit
 
 
 class Shade: Application(){
-    val tag = "ApplicationWorker "
+    val tag = "onLoad"
     override fun onCreate() {
         super.onCreate()
 
 
         //init Firebase
         try {
+            Log.i(tag, "initializing firebase")
             FirebaseClient.init(applicationContext)
         } catch (e: Exception) {
             Log.e(FirebaseClient.tag, "Firebase initialization error", e)

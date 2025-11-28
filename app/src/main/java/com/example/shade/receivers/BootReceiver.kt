@@ -10,6 +10,13 @@ import com.example.shade.Network
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+
+            try {
+                com.google.firebase.FirebaseApp.initializeApp(context)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
             val vpnIntent = VpnService.prepare(context)
             if (vpnIntent == null) {
                 context.startService(Intent(context, Network::class.java))

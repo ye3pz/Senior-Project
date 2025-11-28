@@ -6,7 +6,7 @@ import okhttp3.OkHttpClient
 import okhttp3.MultipartBody
 import okhttp3.Request
 import org.json.JSONObject
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.FileInputStream
@@ -34,7 +34,7 @@ object AI_Client {
             return
         }
 
-        val mediaType = getMimeType(file)?.toMediaTypeOrNull()
+        val mediaType = getMimeType(file)?.toMediaType()
         val fileRequestBody = file.asRequestBody(mediaType)
 
         val requestBody = MultipartBody.Builder()
@@ -77,7 +77,8 @@ object AI_Client {
         {"hash": "$sha256"}
     """.trimIndent()
 
-        val requestBody = json.toRequestBody("application/json".toMediaTypeOrNull())
+        Log.i(tag, "sending request body $json")
+        val requestBody = json.toRequestBody("application/json".toMediaType())
 
 
 
@@ -89,12 +90,14 @@ object AI_Client {
 
          try {
             Log.i(tag, "making a request to $hashUrl")
+
             client.newCall(request).execute().use() { response ->
                 val responseText = response.body.string()
                 if (!response.isSuccessful) {
                     Log.e(tag, "Failed to upload file to server")
                     Log.i(tag, ("${response.code} : ${response.message} "))
                 }
+                Log.i(tag, responseText)
                 try {
                 val json = JSONObject(responseText)
                 val status = json.getString("status")
@@ -110,7 +113,7 @@ object AI_Client {
 
                     "UNKNOWN" -> {
                         Log.i(tag, "Hash not recognized. Uploading file...")
-                        UploadAndScanFile(filePath)
+                       // UploadAndScanFile(filePath)
                     }
                 }
             } catch (e: Exception) {
