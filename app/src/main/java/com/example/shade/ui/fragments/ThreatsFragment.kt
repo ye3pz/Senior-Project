@@ -17,7 +17,7 @@ import android.util.Log
 
 class ThreatsFragment : Fragment() {
     val log_tag = "ThreatsFragment"
-    val threatList = ThreatsList.threatsList
+    val threatList = ThreatsList.threatMap
     // Called to create and return the view hierarchy associated with this fragment // Inflates and returns the view for this fragment
        override fun onCreateView(
          inflater: LayoutInflater,
@@ -37,7 +37,7 @@ class ThreatsFragment : Fragment() {
         val recyclerView: RecyclerView = fragmentView.findViewById(R.id.recyclerView_threats)
         val noThreatsTextView: TextView = fragmentView.findViewById(R.id.txt_no_threats)
 
-        if (ThreatsList.threatsList.isNotEmpty()) {
+        if (ThreatsList.threatMap.isNotEmpty()) {
             recyclerView.layoutManager = LinearLayoutManager(context)
             // *** Adapter uses the UI-specific list and ThreatItem data class ***
             val adapter = ThreatsAdapter()

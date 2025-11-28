@@ -5,30 +5,41 @@ import  okhttp3.*
 import okhttp3.OkHttpClient
 import okhttp3.MultipartBody
 import okhttp3.Request
+import org.json.JSONObject
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
+import java.io.FileInputStream
+import java.security.MessageDigest
 import android.webkit.MimeTypeMap
+import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.internal.closeQuietly
 
-
+const val tag = "AI_Client"
 object AI_Client {
-    const val tag = "AI_Client"
-    val   client =  OkHttpClient()
-    val url = "http://192.168.105.59:5000/api/scan"
+    const val ip= "192.168.105.79"
+    val client = OkHttpClient.Builder()
+        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS) // <-- important
+        .callTimeout(0, java.util.concurrent.TimeUnit.SECONDS)  // unlimited
+        .build()
+    val url = "http://$ip:5000//analyze/upload"
+    val hashUrl = "http://$ip:5000/check_hash"
 
-    fun UploadAndScanFile(filePath: String){
+    fun UploadAndScanFile(filePath: String) {
         val file = File(filePath)
-         if(!file.exists()) {
+        if (!file.exists()) {
             Log.e(tag, "File does not exist at $filePath")
-             return
+            return
         }
 
         val mediaType = getMimeType(file)?.toMediaTypeOrNull()
         val fileRequestBody = file.asRequestBody(mediaType)
 
         val requestBody = MultipartBody.Builder()
-            .setType (MultipartBody.FORM)
-            .addFormDataPart("Uploading file",file.name, fileRequestBody)
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("file", file.name, fileRequestBody)
             .build()
 
         val request = Request.Builder()
@@ -38,19 +49,78 @@ object AI_Client {
 
         try {
             Log.i(tag, "making a request to $url")
-            client.newCall(request).execute().use(){response ->
-                if(!response.isSuccessful){
+            client.newCall(request).execute().use() { response ->
+                if (!response.isSuccessful) {
                     Log.e(tag, "Failed to upload file to server")
-                    println("${response.code} : ${response.message} ")
-                }else {
+                    Log.i(tag, ("${response.code} : ${response.message} "))
+                } else {
                     Log.i(tag, "Successfully uplaoded file to Server")
-                    print(response.body.toString())
+                    val responseText = response.body.string()
+                    Log.i(tag, "Report: $responseText")
                 }
             }
-        } catch( e: Exception){
-            Log.e(tag, "Failed Request",e)
+        } catch (e: Exception) {
+            Log.e(tag, "Failed Request", e)
         }
     }
+
+    fun UploadFile(filePath: String) {
+        Log.i(tag, "Hash Upload starting")
+        val file = File(filePath)
+        if(!file.exists()) {
+            Log.e(tag, "File does not exist at $filePath")
+         return
+        }
+        val sha256 = getSha256(file)
+
+        val json = """
+        {"hash": "$sha256"}
+    """.trimIndent()
+
+        val requestBody = json.toRequestBody("application/json".toMediaTypeOrNull())
+
+
+
+
+        val request = Request.Builder()
+            .url(hashUrl)
+            .post(requestBody)
+            .build()
+
+         try {
+            Log.i(tag, "making a request to $hashUrl")
+            client.newCall(request).execute().use() { response ->
+                val responseText = response.body.string()
+                if (!response.isSuccessful) {
+                    Log.e(tag, "Failed to upload file to server")
+                    Log.i(tag, ("${response.code} : ${response.message} "))
+                }
+                try {
+                val json = JSONObject(responseText)
+                val status = json.getString("status")
+
+                when (status) {
+                    "KNOWN_SAFE" -> {
+                        Log.i(tag, "SAFE: No need to upload file.")
+                    }
+
+                    "KNOWN_MALWARE" -> {
+                        Log.i(tag, "MALWARE: No need to upload file.")
+                    }
+
+                    "UNKNOWN" -> {
+                        Log.i(tag, "Hash not recognized. Uploading file...")
+                        UploadAndScanFile(filePath)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(tag, "Failed to parse JSON hash response", e)
+        }
+        }
+    } catch( e: Exception) {
+        Log.e(tag, "Failed Request", e)
+    }
+}
 
 }
 
@@ -58,3 +128,27 @@ fun getMimeType(file: File): String? {
     val extension = MimeTypeMap.getFileExtensionFromUrl(file.path)
     return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
 }
+
+fun getSha256(file: File): String {
+    Log.i(tag, "getting sha-256")
+    val messageDigest = MessageDigest.getInstance("SHA-256") //message digest object
+    val buffer = ByteArray(1024) //array to read into
+    val fileInputStream = FileInputStream(file)  // FileInputStream reads raw bytes from the file
+
+    try {
+        var bytesRead = fileInputStream.read(buffer)
+        while (bytesRead != -1) {
+            messageDigest.update(buffer, 0, bytesRead) // Feed the chunk into the digest
+            bytesRead = fileInputStream.read(buffer) //read next chunk
+        }
+    } catch (e: Exception) {
+        Log.e("sha256", "failed to get sha256 of file", e)
+    } finally {
+        fileInputStream.close()
+    }
+    Log.i(tag, "message digest finished")
+    val hashBytes = messageDigest.digest()
+    Log.i(tag, "hash function finished")
+    return hashBytes.joinToString("") { "%02x".format(it) } // converting hash bytes to string
+}
+

@@ -12,7 +12,7 @@ import com.example.shade.databinding.ActivityMainBinding
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.example.shade.data.FirebaseClient
-
+import com.example.shade.data.FirebaseClient.cleanInvalidIpsFromFirebase
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
-
+    private val tag = "mainActivity"
     private lateinit var binding: ActivityMainBinding
     private lateinit var vpnPermissionLauncher: ActivityResultLauncher<Intent>
 
@@ -49,6 +49,12 @@ class MainActivity : AppCompatActivity() {
         } else {
             startService(Intent(this, Network::class.java))
         }
+        try {
+
+        } catch(e: Exception){
+            Log.e(tag," error cleaning invalid ips from database",e)
+        }
+        FirebaseClient.addIp("66.228.39.180", false)
 
 
         // ✅ Set up Navigation Component

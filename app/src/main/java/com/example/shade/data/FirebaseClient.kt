@@ -6,6 +6,8 @@ import com.example.shade.data.UrlHausFeed.extractIpFromUrl
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
+import java.net.InetAddress
+import java.net.UnknownHostException
 
 
 
@@ -161,6 +163,11 @@ object FirebaseClient {
                     continue
                 }
 
+                if (!isValidAddress(ip)) {
+                    Log.w("ThreatUpdater", "Skipping non-IP entry: $ip from ${threat.url}")
+                    continue
+                }
+
                 val ipKey = ip.replace(".", "_") // Firebase-safe key
 
                 // Metadata map for this IP
@@ -186,6 +193,47 @@ object FirebaseClient {
             Log.e(tag, "failed to update  Firebase with theats" , e)
             e.printStackTrace()
 
+        }
+    }
+
+        fun isValidAddress(ip: String): Boolean {
+            return try {
+                if (ip.isNullOrBlank()) return false
+                val ipv4Pattern = Regex("^((25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)\\.){3}(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)$")
+                return ipv4Pattern.matches(ip)
+            } catch (e: UnknownHostException) {
+                false
+            }
+    }
+    fun cleanInvalidIpsFromFirebase() {
+        Log.i(tag, "Starting cleaning")
+        val dbRef = FirebaseDatabase.getInstance().getReference("ips/untrusted")
+
+        dbRef.get().addOnSuccessListener { snapshot ->
+            if (!snapshot.exists()) {
+                Log.i(tag, "No entries under ips/untrusted.")
+                return@addOnSuccessListener
+            }
+
+            var removedCount = 0
+            for (child in snapshot.children) {
+                val key = child.key ?: continue
+                Log.d("FirebaseCleaner", "Checking key=$key => ${key.replace("_", ".")}")
+                // Convert back to normal IP form if stored with underscores
+                val ipCandidate = key.replace("_", ".")
+
+                if (!isValidAddress(ipCandidate)) {
+                    Log.w(tag, "Deleting invalid IP key: $key")
+                    dbRef.child(key).removeValue()
+                    removedCount++
+                }
+            }
+            if( removedCount ==0){
+                Log.i(tag, "no invalid ips found")
+            }
+            Log.i(tag, "Cleanup finished. Removed $removedCount invalid entries.")
+        }.addOnFailureListener { e ->
+            Log.e(tag, "Failed to clean invalid IPs", e)
         }
     }
 

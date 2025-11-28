@@ -21,7 +21,7 @@ import android.provider.OpenableColumns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-import com.example.shade.data.AI_Client.UploadAndScanFile
+import com.example.shade.data.AI_Client.UploadFile
 
 
 // ScanFragment is a modular UI component that displays the Scan screen content
@@ -156,7 +156,7 @@ class ScanFragment : Fragment() {
             if (localFilePath != null) {
                 withContext(Dispatchers.IO) {
                     Log.i(log_tag, localFilePath.toString())
-                    UploadAndScanFile(localFilePath.toString())
+                    UploadFile(localFilePath.toString())
 
                     //  Delete the temporary file after successful upload
                     File(localFilePath).delete()

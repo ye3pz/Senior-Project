@@ -22,6 +22,7 @@ class UpdateThreatsWorker(appContext: Context, workerParams: WorkerParameters) :
                 async {
                     val time = measureTimeMillis {
                         Log.i(tag, "Starting updateFirebaseWithThreats()")
+
                         FirebaseClient.updateFirebaseWithThreats()
                     }
                         Log.i(tag, "Finished updateFirebaseWithThreats() in ${time}ms")

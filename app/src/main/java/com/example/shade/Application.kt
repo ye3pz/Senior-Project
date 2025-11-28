@@ -23,7 +23,7 @@ class Shade: Application(){
         }
 
         try {
-            /*
+
            val threatUpdateRequest =
                 PeriodicWorkRequestBuilder<UpdateThreatsWorker>(
                     24, TimeUnit.HOURS)
@@ -38,10 +38,11 @@ class Shade: Application(){
                 "ThreatUpdate",
                 ExistingPeriodicWorkPolicy.KEEP,   // keep the old one if it’s already scheduled
                 threatUpdateRequest
+            )
 
-                */
 
-                // /*
+
+                 /*
                 //For testing
 
             val testRequest = OneTimeWorkRequestBuilder<UpdateThreatsWorker>()
@@ -60,6 +61,9 @@ class Shade: Application(){
                     testRequest
 
             )
+            */
+                        //For testing
+
 
         } catch(e: Exception){
             Log.e(tag, "Failed to schedule ThreatUpdateWorker", e)
