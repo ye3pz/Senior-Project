@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import com.example.shade.utils.HistoryItem
-import com.example.shade.utils.ThreatLevel
+import com.example.shade.utils.toHistoryItem
 
 class HistoryViewModel : ViewModel() {
 
@@ -37,22 +37,7 @@ class HistoryViewModel : ViewModel() {
         }
     }
 
-    private fun ThreatItem.toHistoryItem(): HistoryItem {
-        val dateTime = java.text.SimpleDateFormat(
-            "MM-dd-yyyy hh:mm a",
-            java.util.Locale.getDefault()
-        ).format(System.currentTimeMillis())
 
-        return HistoryItem(
-            name = title,
-            dateTime = dateTime,
-            threatLevel = threatLevel,
-            description = description,
-            dangerList = dangers,
-            source = source,
-            riskScore = riskScore
-        )
-    }
     fun refreshHistory() {
         _items.value = ThreatsList.activeThreats.toList().map { it.toHistoryItem() }
     }

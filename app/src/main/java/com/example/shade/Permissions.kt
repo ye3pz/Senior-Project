@@ -269,19 +269,30 @@ class Permissions(private val context: Context) {
             else -> ThreatLevel.SAFE
         }
 
+
+        val displayName = resolveAppName(pkg.packageName)
+
         val descriptionText =
-            "App Name: $appName" +
+            "App Name: $displayName" +
                     "\nVersion: ${pkg.versionName ?: "N/A"}" +
                     "\nRisk Score: $riskScore" +
                     "\nSource: App Permission Scan"
 
         return ThreatItem(
-            title = pkg.packageName,
+            title =  displayName,
             description = descriptionText,
             dangers = lastPermissionAlerts.toList(),
             riskScore = riskScore,
             threatLevel = threatLevel,
             source = "Permission Scan"
         )
+    }
+    fun resolveAppName(packageName: String): String {
+        return try {
+            val appInfo = context.packageManager.getApplicationInfo(packageName, 0)
+            context.packageManager.getApplicationLabel(appInfo).toString()
+        } catch (e: PackageManager.NameNotFoundException) {
+            packageName // fallback to package name if not found
+        }
     }
 }

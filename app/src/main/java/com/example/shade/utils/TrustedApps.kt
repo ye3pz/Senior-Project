@@ -19,7 +19,10 @@ object TrustedApps {
         "com.samsung.",
         "com.android.",
         "com.sec.android.",
-        "com.qualcomm."
+        "com.qualcomm.",
+        "com.oakever.tiletrip",
+        "com.pinterest",
+        "com.soulcompany.bubbleshooter.relaxing"
     )
     fun isTrusted(packageName: String): Boolean {
         // Exact match first

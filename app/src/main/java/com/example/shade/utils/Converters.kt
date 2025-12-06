@@ -27,3 +27,20 @@ fun MalwareScanResponse.toThreatItem(pkgName: String): ThreatItem {
         source = "APK Upload Scan"
     )
 }
+
+fun ThreatItem.toHistoryItem(): HistoryItem {
+    val dateTime = java.text.SimpleDateFormat(
+        "MM-dd-yyyy hh:mm a",
+        java.util.Locale.getDefault()
+    ).format(System.currentTimeMillis())
+
+    return HistoryItem(
+        name = title, // Keep package name here
+        dateTime = dateTime,
+        threatLevel = threatLevel,
+        description = description,
+        dangerList = dangers,
+        source = source,
+        riskScore = riskScore
+    )
+}
