@@ -12,6 +12,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.shade.ui.viewmodel.QuickScanViewModel
+import com.example.shade.utils.LoadingOverlay
 
 @Composable
 fun HomePage(
@@ -32,6 +34,8 @@ fun HomePage(
     val background = Color(0xFF311A57)      // dark purple
     val cardColor = Color(0xFF5A3B8D)       // quick scan card
     val textSoft = Color(0xFFE5DDF8)
+
+    val isScanning = viewModel.isScanning.collectAsState().value
 
     Column(
         modifier = Modifier
@@ -130,6 +134,9 @@ fun HomePage(
                 color = Color.White
             )
         }
+    }
+    if (isScanning) {
+        LoadingOverlay("Running Quick Scan… Results will be on the History Page")
     }
 }
 

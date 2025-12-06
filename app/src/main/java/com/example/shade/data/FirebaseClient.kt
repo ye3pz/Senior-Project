@@ -2,12 +2,14 @@ package com.example.shade.data
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.animation.core.snap
 import com.example.shade.data.UrlHausFeed.extractIpFromUrl
 import com.google.firebase.FirebaseApp
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.tasks.await
 import java.net.InetAddress
 import java.net.UnknownHostException
+import com.example.shade.utils.ThreatItem
 
 
 
@@ -270,6 +272,40 @@ object FirebaseClient {
         }
     }
 
+    fun getUntrustedSignatures(onResult: (List<ThreatItem>) -> Unit) {
+        val ref = db.getReference("signatures/untrusted/")
+        ref.get()
+            .addOnSuccessListener { snapshot ->
+
+                val signatureThreats = snapshot.children.mapNotNull { dataSnapshot ->
+                    val md5Key = dataSnapshot.key ?: return@mapNotNull null
+
+                    // Read exactly the fields your update function saves
+                    val firstSeen = dataSnapshot.child("Firstseen").getValue(String::class.java) ?: "Unknown"
+                    val lastSeen = dataSnapshot.child("Lastseen").getValue(String::class.java) ?: "Unknown"
+                    val reason = dataSnapshot.child("Listingreason").getValue(String::class.java) ?: "Unknown"
+
+                    val descriptionText =
+                        "First Seen: $firstSeen\n" +
+                                "Last Seen: $lastSeen\n" +
+                                "Reason: $reason"
+
+                    ThreatItem(
+                        title = md5Key,
+                        description = descriptionText
+                    )
+                }
+
+                onResult(signatureThreats)
+            }
+            .addOnFailureListener { e ->
+                Log.e(tag, "Failed to fetch untrusted signatures", e)
+                onResult(emptyList())
+            }
+    }
+
+
+
     suspend fun checkSignatureUntrusted(signatureMd5: String): Boolean {
         return try {
             val ref = db.getReference("signatures/untrusted").child(signatureMd5)
@@ -323,8 +359,15 @@ object FirebaseClient {
             e.printStackTrace()
         }
     }
-    fun addApp(){
-
+    suspend fun isApkHashtrusted(hash: String): Boolean {
+        return try{
+            val ref = db.getReference("apps/untrusted").child(hash)
+            val snapshot= ref.get().await()
+            snapshot.exists() // true = untrusted, false = not found
+        } catch(e: Exception){
+            Log.e(tag, "app hash check failed", e)
+            return false
+        }
     }
 }
 

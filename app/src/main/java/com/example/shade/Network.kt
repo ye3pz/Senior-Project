@@ -14,7 +14,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import  com.example.shade.data.FirebaseClient
-import com.example.shade.data.ThreatItem
+import com.example.shade.utils.ThreatItem
 import java.net.SocketTimeoutException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex

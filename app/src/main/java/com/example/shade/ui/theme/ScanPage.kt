@@ -20,21 +20,27 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.shade.ui.viewmodel.HistoryViewModel
 import com.example.shade.ui.viewmodel.QuickScanViewModel
+import com.example.shade.ui.viewmodel.FullScanViewModel
+import com.example.shade.utils.LoadingOverlay
 
 @Composable
 fun ScanPage(
     historyViewModel: HistoryViewModel,
     quickScanViewModel: QuickScanViewModel,
+    fullScanViewModel: FullScanViewModel,
     onMenuClick: () -> Unit
 ) {
     val background = Color(0xFF311A57)      // dark purple
     val cardColor = Color(0xFF5A3B8D)       // lighter purple for cards
 
+    val quickScanning = quickScanViewModel.isScanning.collectAsState().value
+    val fullScanning = fullScanViewModel.isScanning.collectAsState().value
+
+
     LaunchedEffect(quickScanViewModel.scanCompleted.collectAsState().value) {
-        if (quickScanViewModel.scanCompleted.value) {
+        if (quickScanViewModel.scanCompleted.value  || fullScanViewModel.scanCompleted.value) {
             historyViewModel.refreshHistory()
         }
     }
@@ -125,11 +131,18 @@ fun ScanPage(
                     modifier = Modifier.size(22.dp)
                 )
             },
-            onClick = {}
+            onClick = { fullScanViewModel.startFullScan() }
 
         )
-
         Spacer(modifier = Modifier.height(16.dp))
+    }
+
+    if (quickScanning) {
+        LoadingOverlay("Running Quick Scan… Results will be on the History Page")
+    }
+
+    if (fullScanning) {
+        LoadingOverlay("Running Full Scan… This may take a minute. Results will be on the History Page")
     }
 }
 

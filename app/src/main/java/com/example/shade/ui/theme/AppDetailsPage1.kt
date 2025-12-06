@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.shade.utils.HistoryItem
+import com.example.shade.utils.ThreatLevel
 
 @Composable
 fun AppDetailsPage1(
@@ -36,32 +38,10 @@ fun AppDetailsPage1(
     }
 
     // Summary text based on threat level
-    val summaryText = when (app.threatLevel) {
-        ThreatLevel.SAFE ->
-            "This gaming application follows security best practices and uses proper " +
-                    "encryption for sensitive data. No suspicious permissions or behaviors detected."
-        ThreatLevel.MEDIUM ->
-            "This app shows some unusual permission requests and behaviors that could pose " +
-                    "privacy or security risks. It's not confirmed as malicious, but caution is " +
-                    "advised when using it."
-        ThreatLevel.HIGH ->
-            "This app has concerning ad network integrations and excessive data collection " +
-                    "practices. It may expose your personal information or negatively impact your device."
-    }
+    val summaryText = app.description
 
     // Key dangers based on threat level
-    val dangersText = when (app.threatLevel) {
-        ThreatLevel.SAFE ->
-            "• None detected"
-        ThreatLevel.MEDIUM ->
-            "• Requests access to sensitive data\n" +
-                    "• Tracks user behavior across sessions\n" +
-                    "• Communicates frequently with remote servers"
-        ThreatLevel.HIGH ->
-            "• Contains aggressive ad networks\n" +
-                    "• Tracks user behavior extensively\n" +
-                    "• Accesses camera and/or microphone unnecessarily"
-    }
+    val dangersText = app.dangerList.joinToString("\n") { "• $it" }
 
     // Recommended alternative apps for Medium / High
     val recommendedApps: List<String> = when (app.threatLevel) {

@@ -6,16 +6,19 @@ import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PermissionInfo
 import android.content.pm.PackageManager
+import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.provider.Settings
 import android.util.Log
-import android.widget.Toast
 import com.example.shade.data.FirebaseClient
-import com.example.shade.ThreatsList
-import com.example.shade.data.ThreatItem
+import com.example.shade.utils.ThreatItem
+import com.example.shade.utils.ThreatLevel
+import com.example.shade.utils.TrustedApps
 
 class Permissions(private val context: Context) {
     val tag = "permissions"
+    val lastPermissionAlerts = mutableListOf<String>()
+
 
     fun hasUsageStatsPermission(): Boolean {
         val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
@@ -49,6 +52,7 @@ class Permissions(private val context: Context) {
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
         for (app in apps) {
+            if(isSystemApp(app)) continue
             try {
                 // Get the package info for the current app
                 val pkgInfo: PackageInfo =
@@ -82,6 +86,7 @@ class Permissions(private val context: Context) {
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
         for (app in apps) {
+            if(isSystemApp(app)) continue
             try {
                 val pkgInfo: PackageInfo = pm.getPackageInfo(app.packageName, PackageManager.GET_PERMISSIONS)
                 val permissions = pkgInfo.requestedPermissions
@@ -103,6 +108,7 @@ class Permissions(private val context: Context) {
         val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
         for (app in apps) {
+            if(isSystemApp(app)) continue
             try {
                 val pkgInfo = pm.getPackageInfo(app.packageName, PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_META_DATA)
                 // Get the signing certificates for the app, handling newer and older versions of Android
@@ -127,7 +133,28 @@ class Permissions(private val context: Context) {
     }
     suspend fun getSafetyRating(packageInfo: PackageInfo): Int {
         val pm = context.packageManager
+        val appInfo = packageInfo.applicationInfo
         var riskScore = 0
+
+        if (isSystemApp(appInfo)) {
+            return 0 // always safe
+        }
+        val installer = try {
+            pm.getInstallSourceInfo(appInfo!!.packageName).installingPackageName
+        } catch (e: Exception) {
+            null
+        }
+
+        // 3. If installer is trusted → very low risk
+        if (TrustedApps.isTrustedInstaller(installer)) {
+            return 1
+        }
+
+        // Check trusted non-system app (exact or prefix)
+        if (TrustedApps.isTrusted(packageInfo.packageName)) {
+            return 1 // minimum safe-but-not-zero risk
+        }
+
 
         val permissions = try {
             pm.getPackageInfo(packageInfo.packageName, PackageManager.GET_PERMISSIONS).requestedPermissions
@@ -149,6 +176,7 @@ class Permissions(private val context: Context) {
 
                 if (isDangerous) {
                     riskScore += 3
+                    lastPermissionAlerts.add("Requests dangerous permission: $perm")
                 } else {
                     riskScore += 1
                 }
@@ -166,16 +194,19 @@ class Permissions(private val context: Context) {
             )
             if (mode == AppOpsManager.MODE_ALLOWED) {
                 riskScore += 10
+                lastPermissionAlerts.add("App has Usage Stats access (can monitor other apps)")
             }
         }
         // If not a system app, increase risk
-        if ((packageInfo.applicationInfo?.flags ?: 0 and android.content.pm.ApplicationInfo.FLAG_SYSTEM) == 0) {
+        if ((packageInfo.applicationInfo?.flags ?: 0 and ApplicationInfo.FLAG_SYSTEM) == 0) {
             riskScore += 5
+            lastPermissionAlerts.add("App is sideloaded or non-system (higher risk)")
         }
 
         // Signature trust check
         if (!isSignatureTrusted(packageInfo)) {
             riskScore += 5
+            lastPermissionAlerts.add("App signature is NOT trusted")
         }
 
        // TODO: implement request count val requestCount = NetworkMonitorService().getRequestCountForApp(packageInfo.packageName)
@@ -202,6 +233,8 @@ class Permissions(private val context: Context) {
     }
 
     suspend fun isSignatureTrusted(packageInfo: PackageInfo): Boolean {
+        val appInfo = packageInfo.applicationInfo
+        if (isSystemApp(appInfo)) return true
         val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             packageInfo.signingInfo?.apkContentsSigners
         } else {
@@ -218,23 +251,37 @@ class Permissions(private val context: Context) {
         return !isUntrusted
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    private fun isSystemApp(app: ApplicationInfo?): Boolean {
+        if(app == null) return false
+        return (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
+                (app.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
     }
 
-    fun PackageInfo.toThreatItem(appName: CharSequence): ThreatItem {
+    suspend fun toThreatItem(pkg: PackageInfo, appName: CharSequence): ThreatItem {
 
-        // Use the package name as the primary identifier (title)
-        val titleText = this.packageName
+        lastPermissionAlerts.clear()
 
-        // Construct a detailed description
-        val descriptionText = "App Name: $appName (Risk: Dangerous)" +
-                "\nVersion: ${this.versionName ?: "N/A"}" +
-                "\nSource: App Scan"
+        val riskScore = getSafetyRating(pkg)
+
+        val threatLevel = when {
+            riskScore >= 20 -> ThreatLevel.HIGH
+            riskScore >= 10 -> ThreatLevel.MEDIUM
+            else -> ThreatLevel.SAFE
+        }
+
+        val descriptionText =
+            "App Name: $appName" +
+                    "\nVersion: ${pkg.versionName ?: "N/A"}" +
+                    "\nRisk Score: $riskScore" +
+                    "\nSource: App Permission Scan"
 
         return ThreatItem(
-            title = titleText,
-            description = descriptionText
+            title = pkg.packageName,
+            description = descriptionText,
+            dangers = lastPermissionAlerts.toList(),
+            riskScore = riskScore,
+            threatLevel = threatLevel,
+            source = "Permission Scan"
         )
     }
 }

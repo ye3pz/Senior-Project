@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,16 +25,8 @@ import androidx.compose.ui.unit.sp
 import com.example.shade.ui.viewmodel.HistoryViewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-
-// Threat levels used by History and App Details
-enum class ThreatLevel { SAFE, MEDIUM, HIGH }
-
-// Data for each scanned app row
-data class HistoryItem(
-    val name: String,
-    val dateTime: String,
-    val threatLevel: ThreatLevel
-)
+import com.example.shade.utils.HistoryItem
+import com.example.shade.utils.ThreatLevel
 
 @Composable
 fun HistoryPage(
@@ -76,7 +69,19 @@ fun HistoryPage(
                 color = textColor,
                 modifier = Modifier.align(Alignment.Center)
             )
+
+
+            Text(
+                text = "Clear",
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .clickable { viewModel.clearHistory() }
+            )
         }
+
+
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -103,10 +108,21 @@ fun HistoryPage(
                 modifier = Modifier.padding(end = 6.dp)
             )
             Text(
-                text = "${items.size} Total Apps Scanned in Lifetime",
+                text = "${items.size} Total Apps Found to be a Dangerous",
                 color = textColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.weight(1f)) // pushes refresh to the end
+
+            Icon(
+                imageVector = Icons.Filled.Refresh,
+                contentDescription = "Refresh",
+                tint = Color.Cyan,
+                modifier = Modifier
+                    .size(20.dp)
+                    .clickable { viewModel.refreshHistory() }
             )
         }
 

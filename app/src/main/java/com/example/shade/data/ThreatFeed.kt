@@ -41,10 +41,6 @@ data class MalwareSample(
     val firstSeen: String
 )
 
-data class ThreatItem(
-    val title: String,
-    val description: String
-)
 
 
 public interface UrlHausApi {

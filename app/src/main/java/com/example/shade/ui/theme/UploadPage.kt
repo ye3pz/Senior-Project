@@ -21,25 +21,53 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
-
 import com.example.shade.utils.UploadHelper
+import com.example.shade.utils.ThreatItem
+import com.example.shade.utils.ThreatLevel
+import com.example.shade.utils.LoadingOverlay
+import com.example.shade.ui.viewmodel.HistoryViewModel
+
+
+object ScanCallbacks {
+    var onScanCompleted: ((ThreatItem?) -> Unit)? = null
+}
 
 @Composable
 fun UploadPage(
-    onMenuClick: () -> Unit
+    onMenuClick: () -> Unit,
+    historyViewModel: HistoryViewModel,
 ) {
     val context = LocalContext.current
     val uploadHelper = remember { UploadHelper(context) }
     val coroutineScope = rememberCoroutineScope()
+    var scanResult by remember { mutableStateOf<ThreatItem?>(null) }
+    var isUploading by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        ScanCallbacks.onScanCompleted = { result ->
+            scanResult = result
+        }
+
+        onDispose {
+            ScanCallbacks.onScanCompleted = null
+        }
+    }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
             coroutineScope.launch {
+                isUploading = true
                 uploadHelper.processFileUri(it)
+                isUploading = false
+                historyViewModel.refreshHistory()
             }
         }
     }
@@ -177,5 +205,52 @@ fun UploadPage(
                 lineHeight = 18.sp
             )
         }
+        if (scanResult != null) {
+            ScanResultDialog(
+                threatItem = scanResult!!,
+                onDismiss = { scanResult = null }
+            )
+        }
     }
+    if (isUploading) {
+        LoadingOverlay("Uploading and scanning APK…")
+    }
+
 }
+
+@Composable
+fun ScanResultDialog(
+    threatItem: ThreatItem,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Scan Result: ${threatItem.threatLevel}",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text("File: ${threatItem.title}")
+                Text("Confidence: ${threatItem.threatLevel}%")
+                Text("Summary: ${threatItem.description}")
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (threatItem.threatLevel == ThreatLevel.HIGH) {
+                    Text("⚠ Malware detected", color = Color.Red)
+                } else {
+                    Text("✓ No threats found", color = Color.Green)
+                }
+            }
+        },
+        confirmButton = {
+            Text(
+                "OK",
+                modifier = Modifier.clickable { onDismiss() }
+            )
+        }
+    )
+}
+

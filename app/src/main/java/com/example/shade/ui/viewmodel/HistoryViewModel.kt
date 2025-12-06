@@ -3,12 +3,12 @@ package com.example.shade.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shade.ThreatsList
-import com.example.shade.data.ThreatItem
+import com.example.shade.utils.ThreatItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.example.shade.ui.theme.HistoryItem
-import com.example.shade.ui.theme.ThreatLevel
+import com.example.shade.utils.HistoryItem
+import com.example.shade.utils.ThreatLevel
 
 class HistoryViewModel : ViewModel() {
 
@@ -30,7 +30,6 @@ class HistoryViewModel : ViewModel() {
     }
 
 
-     // TODO : Future clear of history
     fun clearHistory() {
         viewModelScope.launch {
             ThreatsList.activeThreats.clear()
@@ -39,12 +38,6 @@ class HistoryViewModel : ViewModel() {
     }
 
     private fun ThreatItem.toHistoryItem(): HistoryItem {
-        val threatLevel = when {
-            description.contains("Dangerous", ignoreCase = true) -> ThreatLevel.HIGH
-            description.contains("Moderate", ignoreCase = true)  -> ThreatLevel.MEDIUM
-            else -> ThreatLevel.SAFE
-        }
-
         val dateTime = java.text.SimpleDateFormat(
             "MM-dd-yyyy hh:mm a",
             java.util.Locale.getDefault()
@@ -53,7 +46,11 @@ class HistoryViewModel : ViewModel() {
         return HistoryItem(
             name = title,
             dateTime = dateTime,
-            threatLevel = threatLevel
+            threatLevel = threatLevel,
+            description = description,
+            dangerList = dangers,
+            source = source,
+            riskScore = riskScore
         )
     }
     fun refreshHistory() {

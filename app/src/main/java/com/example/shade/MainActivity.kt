@@ -1,80 +1,3 @@
-
-/*import android.content.Intent
-import android.net.VpnService
-import android.os.Bundle
-import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
-import com.example.shade.databinding.ActivityMainBinding
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.setupWithNavController
-import com.example.shade.data.FirebaseClient
-import com.example.shade.data.FirebaseClient.cleanInvalidIpsFromFirebase
-
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-
-
-
-class MainActivity : AppCompatActivity() {
-    private val tag = "mainActivity"
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var vpnPermissionLauncher: ActivityResultLauncher<Intent>
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        // Initialize the launcher inside onCreate
-        vpnPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            if (result.resultCode == RESULT_OK) {
-                startService(Intent(this, Network::class.java))
-            } else {
-                // User denied VPN permission
-            }
-        }
-
-
-        // Request VPN permission
-        val intent = VpnService.prepare(this)
-        if (intent != null) {
-            vpnPermissionLauncher.launch(intent)
-        } else {
-            startService(Intent(this, Network::class.java))
-        }
-        try {
-
-        } catch(e: Exception){
-            Log.e(tag," error cleaning invalid ips from database",e)
-        }
-        FirebaseClient.addIp("66.228.39.180", false)
-
-
-        // ✅ Set up Navigation Component
-        val navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHostFragment.navController
-
-        // ✅ Connect BottomNavigationView with NavController
-        binding.bottomNavigation.setupWithNavController(navController)
-    }
-
-
-
-}
-*/
-
-
-
-
-
-
 package com.example.shade
 
 import android.os.Bundle
@@ -101,7 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.example.shade.ui.theme.AppDetailsPage1
-import com.example.shade.ui.theme.HistoryItem
+import com.example.shade.utils.HistoryItem
 import com.example.shade.ui.theme.HistoryPage
 import com.example.shade.ui.theme.MenuScreen
 import com.example.shade.ui.theme.ScanPage
@@ -113,6 +36,7 @@ import com.example.shade.ui.theme.AboutUs
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.shade.ui.viewmodel.QuickScanViewModel
 import com.example.shade.ui.viewmodel.HistoryViewModel
+import com.example.shade.ui.viewmodel.FullScanViewModel
 import android.net.VpnService
 import android.util.Log
 import com.example.shade.data.FirebaseClient
@@ -168,6 +92,7 @@ class MainActivity : ComponentActivity() {
 
                 val quickScanViewModel: QuickScanViewModel = viewModel()
                 val historyViewModel: HistoryViewModel = viewModel()
+                val fullScanViewModel: FullScanViewModel = viewModel()
 
 
                 quickScanViewModel.onScanCompleted = {
@@ -241,10 +166,12 @@ class MainActivity : ComponentActivity() {
                                         1 -> ScanPage(
                                             historyViewModel = historyViewModel,
                                             quickScanViewModel= quickScanViewModel,
+                                            fullScanViewModel= fullScanViewModel,
                                             onMenuClick = { isMenuOpen = true }
                                         )
                                         2 -> UploadPage(
-                                             onMenuClick = {isMenuOpen = true }
+                                             onMenuClick = {isMenuOpen = true },
+                                            historyViewModel = historyViewModel
                                         )
                                         3 -> HistoryPage(
                                             viewModel = historyViewModel,

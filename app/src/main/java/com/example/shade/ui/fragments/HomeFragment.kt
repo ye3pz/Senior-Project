@@ -15,7 +15,7 @@ import com.example.shade.R
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.example.shade.ThreatsList
-import com.example.shade.data.ThreatItem
+import com.example.shade.utils.ThreatItem
 
 
 class HomeFragment : Fragment() {

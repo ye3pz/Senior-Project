@@ -8,7 +8,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shade.Permissions
 import com.example.shade.ThreatsList
-import com.example.shade.data.ThreatItem
+import com.example.shade.utils.ThreatItem
+import com.example.shade.utils.ThreatLevel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,10 +27,15 @@ class QuickScanViewModel(application: Application) : AndroidViewModel(applicatio
     private val _scanCompleted = MutableStateFlow(false)
     val scanCompleted: StateFlow<Boolean> = _scanCompleted
 
+    private val _isScanning = MutableStateFlow(false)
+    val isScanning: StateFlow<Boolean> = _isScanning
+
     var onScanCompleted: (() -> Unit)? = null
 
     fun startQuickScan() {
         viewModelScope.launch(Dispatchers.IO) {
+            _isScanning.value = true
+            _scanCompleted.value = false
             try {
                 Log.i(tag, "starting quick scan")
                 permissions.requestUsageStatsPermission()
@@ -52,7 +58,7 @@ class QuickScanViewModel(application: Application) : AndroidViewModel(applicatio
                         Log.i("QuickScan", "App: ${app.packageName}, Score: $riskScore, Label: $label")
 
                         if (label == "Dangerous") {
-                            val appThreatItem = app.toThreatItem(appName)
+                            val appThreatItem = permissions.toThreatItem(app, appName)
                             activeThreats.add(appThreatItem)
                         }
                     } catch (e: Exception) {
@@ -61,20 +67,14 @@ class QuickScanViewModel(application: Application) : AndroidViewModel(applicatio
                 }
                 Log.i(tag,"finished scan")
                 _scanLogs.value = logs
+                _isScanning.value = false
                 _scanCompleted.value = true
 
-                // ✅ Notify that scan is done
                 onScanCompleted?.invoke()
 
             } catch (e: Exception) {
                 Log.e("QuickScan", "Scan failed", e)
             }
         }
-    }
-
-    private fun PackageInfo.toThreatItem(appName: CharSequence): ThreatItem {
-        val titleText = this.packageName
-        val descriptionText = "App Name: $appName (Risk: Dangerous)\nVersion: ${this.versionName ?: "N/A"}\nSource: Quick Scan"
-        return ThreatItem(title = titleText, description = descriptionText)
     }
 }
