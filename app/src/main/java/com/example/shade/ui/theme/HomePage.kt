@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.shade.ui.viewmodel.QuickScanViewModel
 import com.example.shade.utils.LoadingOverlay
+import com.example.shade.ThreatsList.activeThreats
 
 @Composable
 fun HomePage(
@@ -133,6 +134,12 @@ fun HomePage(
                 fontSize = 16.sp,
                 color = Color.White
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Device Health Card
+            DeviceHealthCard()
+
         }
     }
     if (isScanning) {
@@ -140,4 +147,68 @@ fun HomePage(
     }
 }
 
+@Composable
+fun DeviceHealthCard() {
+    val activeThreatsCount = activeThreats.size
+
+    // Determine health label
+    val healthLabel = when {
+        activeThreatsCount == 0 -> "Excellent"
+        activeThreatsCount <= 3 -> "Good"
+        activeThreatsCount <= 6 -> "Fair"
+        else -> "Poor"
+    }
+
+    // Create dynamic list of observations
+    val observations = listOf(
+        "${activeThreats.count { it.threatLevel == com.example.shade.utils.ThreatLevel.HIGH }} High risk apps detected",
+        "${activeThreats.count { it.threatLevel == com.example.shade.utils.ThreatLevel.MEDIUM }} Medium risk apps detected",
+        "${activeThreats.count { it.threatLevel == com.example.shade.utils.ThreatLevel.SAFE }} Safe apps detected"
+    )
+
+    val cardColor = Color(0xFF5A3B8D)
+    val textSoft = Color(0xFFE5DDF8)
+
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth()
+            .background(cardColor, RoundedCornerShape(18.dp))
+            .padding(16.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "Device Health",
+                fontSize = 18.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = when (healthLabel) {
+                            "Excellent" -> Color(0xFF2CC67A)
+                            "Good" -> Color(0xFF7ED321)
+                            "Fair" -> Color(0xFFFFA726)
+                            else -> Color(0xFFE53935)
+                        },
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text(healthLabel, color = Color.White, fontSize = 12.sp)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        observations.forEach { obs ->
+            Text(obs, color = textSoft, fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+}
 
