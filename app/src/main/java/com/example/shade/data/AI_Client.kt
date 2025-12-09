@@ -119,10 +119,12 @@ object AI_Client {
                 when (status) {
                     "KNOWN_SAFE" -> {
                         Log.i(tag, "SAFE: No need to upload file.")
+                        ScanCallbacks.onHashCheckResult?.invoke("SAFE", file.name)
                     }
 
                     "KNOWN_MALWARE" -> {
                         Log.i(tag, "MALWARE: No need to upload file.")
+                        ScanCallbacks.onHashCheckResult?.invoke("MALWARE", file.name)
                     }
 
                     "UNKNOWN" -> {

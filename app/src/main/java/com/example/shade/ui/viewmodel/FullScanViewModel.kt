@@ -80,7 +80,9 @@ class FullScanViewModel(application: Application) : AndroidViewModel(application
     // 1. Scan installed apps
     suspend private fun scanInstalledApps(logs: MutableList<String>) {
         Log.i(tag, "starting scan of installed apps")
-        val apps = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS)
+        val apps = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS or
+                PackageManager.GET_RECEIVERS or
+                PackageManager.GET_SERVICES)
 
         for (app in apps) {
             try {
@@ -92,7 +94,7 @@ class FullScanViewModel(application: Application) : AndroidViewModel(application
                 logs.add("App: ${app.packageName} → $label")
                 Log.i(tag, "App: ${app.packageName}, Score: $riskScore, Label: $label")
 
-                if (label == "Dangerous") {
+                if (label == "Dangerous" || label == "Moderate") {
                     val appThreatItem = permissions.toThreatItem(app, appName)
                     activeThreats.add(appThreatItem)
                 }

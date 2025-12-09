@@ -108,7 +108,7 @@ fun HistoryPage(
                 modifier = Modifier.padding(end = 6.dp)
             )
             Text(
-                text = "${items.size} Total Apps Found to be a Dangerous",
+                text = "${items.size} Total Apps flagged as risky",
                 color = textColor,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium

@@ -69,8 +69,6 @@ class Permissions(private val context: Context) {
                         permission == android.Manifest.permission.READ_CONTACTS ||
                         permission == android.Manifest.permission.READ_SMS
                     ) {
-                        // pop up message
-                       // showToast("App ${app.packageName} has dangerous permissions.")
                         Log.i(tag, "App ${app.packageName} has dangerous permissions.")
                     }
                 }
@@ -177,8 +175,6 @@ class Permissions(private val context: Context) {
                 if (isDangerous) {
                     riskScore += 3
                     lastPermissionAlerts.add("Requests dangerous permission: $perm")
-                } else {
-                    riskScore += 1
                 }
             } catch (_: Exception) {}
         }
@@ -199,7 +195,7 @@ class Permissions(private val context: Context) {
         }
         // If not a system app, increase risk
         if ((packageInfo.applicationInfo?.flags ?: 0 and ApplicationInfo.FLAG_SYSTEM) == 0) {
-            riskScore += 5
+            riskScore += 2
             lastPermissionAlerts.add("App is sideloaded or non-system (higher risk)")
         }
 
@@ -209,18 +205,34 @@ class Permissions(private val context: Context) {
             lastPermissionAlerts.add("App signature is NOT trusted")
         }
 
-       // TODO: implement request count val requestCount = NetworkMonitorService().getRequestCountForApp(packageInfo.packageName)
-      //  riskScore += addNetworkRiskScore(packageInfo, requestCount)
+        // System alert winddow check
+        if (permissions?.contains(android.Manifest.permission.SYSTEM_ALERT_WINDOW) == true) {
+            riskScore += 8
+            lastPermissionAlerts.add("Uses SYSTEM_ALERT_WINDOW (can draw over apps / phishing)")
+        }
+
+    // Boot receiver check
+        val hasBootReceiver = packageInfo.receivers?.any { receiver ->
+            receiver?.name?.contains("boot", ignoreCase = true) == true
+        } ?: false
+
+        if (hasBootReceiver) {
+            riskScore += 5
+            lastPermissionAlerts.add("Runs at boot (persistence mechanism)")
+        }
+
+        // Accessibility service check
+        val hasAccessibility = packageInfo.services?.any { service ->
+            service.permission == "android.permission.BIND_ACCESSIBILITY_SERVICE"
+        } ?: false
+
+        if (hasAccessibility) {
+            riskScore += 10
+            lastPermissionAlerts.add("Accessibility Service detected (full control of device)")
+        }
+
 
         return riskScore
-    }
-    fun addNetworkRiskScore(packageInfo: PackageInfo, requestCount: Int): Int {
-        return when {
-            requestCount > 500 -> 10
-            requestCount > 100 -> 5
-            requestCount > 10 -> 2
-            else -> 0
-        }
     }
 
 

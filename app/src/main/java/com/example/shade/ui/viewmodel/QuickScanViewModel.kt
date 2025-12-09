@@ -43,7 +43,10 @@ class QuickScanViewModel(application: Application) : AndroidViewModel(applicatio
                 permissions.checkNumberOfPermissions()
                 permissions.scanAppSignatures()
 
-                val apps = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS)
+                val apps = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS or
+                        PackageManager.GET_RECEIVERS or
+                        PackageManager.GET_SERVICES)
+
                 val activeThreats = ThreatsList.activeThreats
                 val logs = mutableListOf<String>()
 
@@ -57,7 +60,7 @@ class QuickScanViewModel(application: Application) : AndroidViewModel(applicatio
                         logs.add("App: ${app.packageName} → $label")
                         Log.i("QuickScan", "App: ${app.packageName}, Score: $riskScore, Label: $label")
 
-                        if (label == "Dangerous") {
+                        if (label == "Dangerous" || label == "Moderate") {
                             val appThreatItem = permissions.toThreatItem(app, appName)
                             activeThreats.add(appThreatItem)
                         }

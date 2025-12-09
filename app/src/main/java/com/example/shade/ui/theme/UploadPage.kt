@@ -36,6 +36,7 @@ import com.example.shade.ui.viewmodel.HistoryViewModel
 
 object ScanCallbacks {
     var onScanCompleted: ((ThreatItem?) -> Unit)? = null
+    var onHashCheckResult: ((status: String, fileName: String) -> Unit)? = null
 }
 
 @Composable
@@ -47,6 +48,7 @@ fun UploadPage(
     val uploadHelper = remember { UploadHelper(context) }
     val coroutineScope = rememberCoroutineScope()
     var scanResult by remember { mutableStateOf<ThreatItem?>(null) }
+    var hashStatus by remember { mutableStateOf<Pair<String, String>?>(null) }
     var isUploading by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
@@ -54,8 +56,13 @@ fun UploadPage(
             scanResult = result
         }
 
+        ScanCallbacks.onHashCheckResult = { status, fileName ->
+            hashStatus = status to fileName
+        }
+
         onDispose {
             ScanCallbacks.onScanCompleted = null
+            ScanCallbacks.onHashCheckResult = null
         }
     }
 
@@ -205,6 +212,14 @@ fun UploadPage(
                 lineHeight = 18.sp
             )
         }
+        if(hashStatus !=null){
+            val (status, fileName) = hashStatus!!
+            HashResultDialog(
+                fileName = fileName,
+                status = status,
+                onDismiss = { hashStatus = null }
+            )
+        }
         if (scanResult != null) {
             ScanResultDialog(
                 threatItem = scanResult!!,
@@ -253,4 +268,39 @@ fun ScanResultDialog(
         }
     )
 }
+
+@Composable
+fun HashResultDialog(
+    fileName: String,
+    status: String, // "MALWARE" or "SAFE"
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = if (status == "MALWARE") "Malware Detected" else "File is Safe",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text("File: $fileName")
+                Spacer(modifier = Modifier.height(8.dp))
+                if (status == "MALWARE") {
+                    Text("$fileName is known to be malicious!", color = Color.Red)
+                } else {
+                    Text("$fileName is safe.", color = Color.Green)
+                }
+            }
+        },
+        confirmButton = {
+            Text(
+                "OK",
+                modifier = Modifier.clickable { onDismiss() }
+            )
+        }
+    )
+}
+
 
