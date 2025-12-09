@@ -19,10 +19,12 @@ import com.example.shade.utils.toThreatItem
 import com.example.shade.utils.ThreatItem
 import com.example.shade.ui.theme.ScanCallbacks
 import com.example.shade.ThreatsList.activeThreats
+import com.example.shade.BuildConfig
+
 
 const val tag = "AI_Client"
+const val ip = BuildConfig.SERVER_IP
 object AI_Client {
-    const val ip= "192.168.105.42"
     val client = OkHttpClient.Builder()
         .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .writeTimeout(120, java.util.concurrent.TimeUnit.SECONDS)

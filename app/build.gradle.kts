@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.File
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +8,14 @@ plugins {
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.kotlin.serialization)
 }
+
+val envFile = File(projectDir,".env")
+val envProps = Properties()
+
+if (envFile.exists()) {
+    envFile.inputStream().use { envProps.load(it) }
+}
+
 
 android {
     namespace = "com.example.shade"
@@ -16,8 +27,13 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField(
+            "String",
+            "SERVER_IP",
+            "\"${envProps.getProperty("SERVER_IP") ?: ""}\""
+        )
+
     }
 
     buildTypes {
@@ -39,6 +55,7 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
     }
 }
 
