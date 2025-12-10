@@ -14,6 +14,7 @@ import com.example.shade.data.FirebaseClient
 import com.example.shade.utils.ThreatItem
 import com.example.shade.utils.ThreatLevel
 import com.example.shade.utils.TrustedApps
+import android.app.usage.UsageStatsManager
 
 class Permissions(private val context: Context) {
     val tag = "permissions"
@@ -231,6 +232,17 @@ class Permissions(private val context: Context) {
             lastPermissionAlerts.add("Accessibility Service detected (full control of device)")
         }
 
+        val traffic = Network.appTrafficCounter[packageInfo.packageName] ?: 0
+        if (traffic > 1024 * 100) { // more than 100 KB in the last 5s window
+            riskScore += 2
+            lastPermissionAlerts.add("App sending high network traffic: $traffic bytes")
+        }
+
+        val backgroundTime = getBackgroundCpuUsage(packageInfo.packageName)
+
+        if(backgroundTime > 12000){
+            riskScore += 8
+        }
 
         return riskScore
     }
@@ -298,7 +310,26 @@ class Permissions(private val context: Context) {
             threatLevel = threatLevel,
             source = "Permission Scan"
         )
+
     }
+    fun getBackgroundCpuUsage(packageName: String): Long {
+        val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+
+        val end = System.currentTimeMillis()
+        val start = end - (1000 * 60 * 60) // last 1 hour
+
+        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, start, end)
+
+        stats?.forEach { usage ->
+            if (usage.packageName == packageName) {
+                // Available only API 29+
+                return usage.totalTimeForegroundServiceUsed
+            }
+        }
+
+        return 0L
+    }
+
     fun resolveAppName(packageName: String): String {
         return try {
             val appInfo = context.packageManager.getApplicationInfo(packageName, 0)
@@ -308,3 +339,4 @@ class Permissions(private val context: Context) {
         }
     }
 }
+
